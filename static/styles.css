@@ -1,0 +1,106 @@
+/* Center the input form */
+#input-form {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Fade-out effect */
+.fade-out {
+    animation: fadeOut 1s forwards;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+header h1 {
+    text-align: center;
+}
+
+form {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+label, input, button, select {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+input, select {
+    padding: 8px;
+    font-size: 16px;
+}
+
+button {
+    padding: 10px;
+    font-size: 18px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.error {
+    color: red;
+    text-align: center;
+}
+
+h2 {
+    text-align: center;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    background-color: #f8f9fa;
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+strong {
+    color: #007bff;
+}
+
+/* Styling for the "Change Stop" button */
+#change-stop-button {
+    display: block;
+    margin: 20px auto;
+    padding: 10px;
+    font-size: 18px;
+    background-color: #6c757d;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+#change-stop-button:hover {
+    background-color: #5a6268;
+}
+
+/* Styling for the refresh interval selector */
+#refresh-interval {
+    width: auto;
+    display: inline-block;
+    margin-left: 10px;
+}

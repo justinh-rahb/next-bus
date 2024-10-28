@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Next Bus Time</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+    <!-- Awesomplete CSS and JS for Autocomplete -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Next Bus Time</h1>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <!-- JavaScript for the application -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle the "Change Stop" button
+            const changeStopButton = document.getElementById('change-stop-button');
+            if (changeStopButton) {
+                changeStopButton.addEventListener('click', function() {
+                    window.location.href = '/';
+                });
+            }
+
+            // Handle the refresh interval selection
+            const refreshIntervalSelect = document.getElementById('refresh-interval');
+            const autoRefreshDiv = document.getElementById('auto-refresh');
+
+            if (refreshIntervalSelect && autoRefreshDiv) {
+                refreshIntervalSelect.addEventListener('change', function() {
+                    const interval = refreshIntervalSelect.value;
+                    autoRefreshDiv.setAttribute('hx-trigger', `every ${interval}ms`);
+                    htmx.process(autoRefreshDiv); // Re-initialize HTMX on the element
+                });
+            }
+
+            // Autocomplete for stop names
+            var stopNameInput = document.getElementById('stop_name');
+            var stopIdInput = document.getElementById('stop_id');
+
+            if (stopNameInput && stopIdInput) {
+                var awesomplete = new Awesomplete(stopNameInput, {
+                    minChars: 1,
+                    maxItems: 10,
+                    autoFirst: true
+                });
+
+                stopNameInput.addEventListener('input', function() {
+                    var query = stopNameInput.value;
+                    if (query.length >= 1) {
+                        fetch('/autocomplete?q=' + encodeURIComponent(query))
+                            .then(response => response.json())
+                            .then(suggestions => {
+                                awesomplete.list = suggestions.map(function(suggestion) {
+                                    return {
+                                        label: suggestion.stop_name,
+                                        value: suggestion.stop_id
+                                    };
+                                });
+                            });
+                    }
+                });
+
+                stopNameInput.addEventListener('awesomplete-selectcomplete', function(event) {
+                    stopIdInput.value = event.text.value;
+                });
+            }
+        });
+
+        // Function to fade out the input form
+        function fadeOutForm() {
+            const inputForm = document.getElementById('input-form');
+            if (inputForm) {
+                inputForm.classList.add('fade-out');
+            }
+        }
+    </script>
+</body>
+</html>

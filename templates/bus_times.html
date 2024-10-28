@@ -1,0 +1,25 @@
+{% if error %}
+    <div class="error">{{ error }}</div>
+{% elif buses %}
+    <h2>Upcoming Buses at {{ stop_name }}</h2>
+    <ul>
+        {% for bus in buses %}
+            <li>
+                <strong>Route {{ bus.route_name }}</strong> to {{ bus.trip_headsign }} arriving in {{ bus.countdown }} minutes (at {{ bus.arrival_time_formatted }})
+            </li>
+        {% endfor %}
+    </ul>
+    <div>
+        <label for="refresh-interval">Auto-refresh every:</label>
+        <select id="refresh-interval">
+            <option value="5000">5 seconds</option>
+            <option value="10000">10 seconds</option>
+            <option value="30000">30 seconds</option>
+            <option value="60000" selected>60 seconds</option>
+        </select>
+    </div>
+    <!-- Hidden div to trigger auto-refresh -->
+    <div id="auto-refresh" hx-get="/next-bus?stop_id={{ stop_id }}" hx-trigger="every 60000ms" hx-target="#bus-times" hx-swap="innerHTML"></div>
+{% else %}
+    <p>No upcoming buses found for this stop.</p>
+{% endif %}

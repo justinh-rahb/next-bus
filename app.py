@@ -117,61 +117,57 @@ def get_next_bus():
         return render_template('bus_times.html', error='Invalid stop ID')
 
     try:
-        # Fetch GTFS Realtime data with timeout and SSL verification
-        response = requests.get(GTFS_REALTIME_URL, timeout=10)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error fetching GTFS Realtime data: {e}")
-        return render_template('bus_times.html', error='Unable to fetch realtime data.')
+        # Fetch GTFS Realtime data
+        response = requests.get(GTFS_REALTIME_URL)
+        if response.status_code != 200:
+            raise Exception(f'Failed to fetch realtime data: {response.status_code}')
 
-    try:
-        # Parse the GTFS Realtime data
         feed = gtfs_realtime_pb2.FeedMessage()
         feed.ParseFromString(response.content)
+
+        current_time = int(time.time())
+
+        next_buses = []
+        for entity in feed.entity:
+            if entity.HasField('trip_update'):
+                trip_update = entity.trip_update
+                trip_id = trip_update.trip.trip_id
+                route_id = trip_update.trip.route_id
+                trip_headsign = trips.get(trip_id, '')
+                route_name = routes.get(route_id, route_id)
+
+                for stop_time_update in trip_update.stop_time_update:
+                    if stop_time_update.stop_id == stop_id:
+                        arrival_time = stop_time_update.arrival.time
+                        if arrival_time >= current_time:
+                            # Convert UNIX timestamp to local time
+                            local_arrival_time = datetime.fromtimestamp(arrival_time, hsr_timezone)
+                            next_buses.append({
+                                'arrival_time': local_arrival_time,
+                                'route_id': route_id,
+                                'route_name': route_name,
+                                'trip_headsign': trip_headsign
+                            })
+
+        # Sort buses by arrival time
+        next_buses.sort(key=lambda x: x['arrival_time'])
+
+        # Limit to next 5 buses
+        next_buses = next_buses[:5]
+
+        stop_name = stops_dict[stop_id]
+
+        # Calculate countdown and format arrival time
+        now = datetime.now(hsr_timezone)
+        for bus in next_buses:
+            countdown = int((bus['arrival_time'] - now).total_seconds() / 60)
+            bus['countdown'] = max(countdown, 0)
+            bus['arrival_time_formatted'] = bus['arrival_time'].strftime('%I:%M %p')
+
+        return render_template('bus_times.html', buses=next_buses, stop_name=stop_name, stop_id=stop_id)
     except Exception as e:
-        logging.error(f"Error parsing GTFS Realtime data: {e}")
-        return render_template('bus_times.html', error='Error processing realtime data.')
-
-    current_time = int(time.time())
-
-    next_buses = []
-    for entity in feed.entity:
-        if entity.HasField('trip_update'):
-            trip_update = entity.trip_update
-            trip_id = trip_update.trip.trip_id
-            route_id = trip_update.trip.route_id
-            trip_headsign = trips.get(trip_id, '')
-            route_name = routes.get(route_id, route_id)
-
-            for stop_time_update in trip_update.stop_time_update:
-                if stop_time_update.stop_id == stop_id:
-                    arrival_time = stop_time_update.arrival.time
-                    if arrival_time >= current_time:
-                        # Convert UNIX timestamp to local time
-                        local_arrival_time = datetime.fromtimestamp(arrival_time, hsr_timezone)
-                        next_buses.append({
-                            'arrival_time': local_arrival_time,
-                            'route_id': route_id,
-                            'route_name': route_name,
-                            'trip_headsign': trip_headsign
-                        })
-
-    # Sort buses by arrival time
-    next_buses.sort(key=lambda x: x['arrival_time'])
-
-    # Limit to next 5 buses
-    next_buses = next_buses[:5]
-
-    stop_name = stops_dict[stop_id]
-
-    # Calculate countdown and format arrival time
-    now = datetime.now(hsr_timezone)
-    for bus in next_buses:
-        countdown = int((bus['arrival_time'] - now).total_seconds() / 60)
-        bus['countdown'] = max(countdown, 0)
-        bus['arrival_time_formatted'] = bus['arrival_time'].strftime('%I:%M %p')
-
-    return render_template('bus_times.html', buses=next_buses, stop_name=stop_name, stop_id=stop_id)
+        print(f"An error occurred: {e}")
+        return render_template('bus_times.html', error='An unexpected error occurred.')
 
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():

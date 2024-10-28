@@ -41,6 +41,7 @@ import csv
 import logging
 import pytz
 import requests
+from requests.exceptions import RequestException, SSLError, ConnectionError, Timeout
 from flask import Flask, request, render_template, jsonify
 from google.transit import gtfs_realtime_pb2
 
@@ -117,65 +118,73 @@ def get_next_bus():
         return render_template('bus_times.html', error='Invalid stop ID')
 
     try:
-        # Fetch GTFS Realtime data
-        response = requests.get(GTFS_REALTIME_URL)
-        if response.status_code != 200:
-            # Handle non-200 status codes gracefully
-            error_message = f'Failed to fetch realtime data (status code: {response.status_code})'
-            print(error_message)
-            return render_template('bus_times.html', error='Unable to fetch realtime data. Please try again later.')
+        # Fetch GTFS Realtime data with timeout and SSL error handling
+        response = requests.get(GTFS_REALTIME_URL, timeout=10)
+        response.raise_for_status()  # Raises HTTPError for bad responses (4xx or 5xx)
+    except SSLError as ssl_err:
+        print(f"SSL error occurred: {ssl_err}")
+        return render_template('bus_times.html', error='SSL error occurred while fetching realtime data.')
+    except Timeout as timeout_err:
+        print(f"Timeout error occurred: {timeout_err}")
+        return render_template('bus_times.html', error='Request timed out while fetching realtime data.')
+    except ConnectionError as conn_err:
+        print(f"Connection error occurred: {conn_err}")
+        return render_template('bus_times.html', error='Connection error occurred while fetching realtime data.')
+    except RequestException as req_err:
+        print(f"An error occurred while fetching realtime data: {req_err}")
+        return render_template('bus_times.html', error='An error occurred while fetching realtime data.')
 
+    try:
+        # Parse the GTFS Realtime data
         feed = gtfs_realtime_pb2.FeedMessage()
         feed.ParseFromString(response.content)
-
-        current_time = int(time.time())
-
-        next_buses = []
-        for entity in feed.entity:
-            if entity.HasField('trip_update'):
-                trip_update = entity.trip_update
-                trip_id = trip_update.trip.trip_id
-                route_id = trip_update.trip.route_id
-                trip_headsign = trips.get(trip_id, '')
-                route_name = routes.get(route_id, route_id)
-
-                for stop_time_update in trip_update.stop_time_update:
-                    if stop_time_update.stop_id == stop_id:
-                        arrival_time = stop_time_update.arrival.time
-                        if arrival_time >= current_time:
-                            # Convert UNIX timestamp to local time
-                            local_arrival_time = datetime.fromtimestamp(arrival_time, hsr_timezone)
-                            next_buses.append({
-                                'arrival_time': local_arrival_time,
-                                'route_id': route_id,
-                                'route_name': route_name,
-                                'trip_headsign': trip_headsign
-                            })
-
-        if not next_buses:
-            return render_template('bus_times.html', error='No upcoming buses found for this stop.', stop_id=stop_id)
-
-        # Sort buses by arrival time
-        next_buses.sort(key=lambda x: x['arrival_time'])
-
-        # Limit to next 5 buses
-        next_buses = next_buses[:5]
-
-        stop_name = stops_dict[stop_id]
-
-        # Calculate countdown and format arrival time
-        now = datetime.now(hsr_timezone)
-        for bus in next_buses:
-            countdown = int((bus['arrival_time'] - now).total_seconds() / 60)
-            bus['countdown'] = max(countdown, 0)
-            bus['arrival_time_formatted'] = bus['arrival_time'].strftime('%I:%M %p')
-
-        return render_template('bus_times.html', buses=next_buses, stop_name=stop_name, stop_id=stop_id)
     except Exception as e:
-        # Log the exception for debugging purposes
-        print(f"An error occurred: {e}")
-        # Return a user-friendly error message without breaking the app
-        return render_template('bus_times.html', error='An unexpected error occurred. Please try again later.')
+        print(f"Error parsing GTFS Realtime data: {e}")
+        return render_template('bus_times.html', error='Error processing realtime data.')
+
+    current_time = int(time.time())
+
+    next_buses = []
+    for entity in feed.entity:
+        if entity.HasField('trip_update'):
+            trip_update = entity.trip_update
+            trip_id = trip_update.trip.trip_id
+            route_id = trip_update.trip.route_id
+            trip_headsign = trips.get(trip_id, '')
+            route_name = routes.get(route_id, route_id)
+
+            for stop_time_update in trip_update.stop_time_update:
+                if stop_time_update.stop_id == stop_id:
+                    arrival_time = stop_time_update.arrival.time
+                    if arrival_time >= current_time:
+                        # Convert UNIX timestamp to local time
+                        local_arrival_time = datetime.fromtimestamp(arrival_time, hsr_timezone)
+                        next_buses.append({
+                            'arrival_time': local_arrival_time,
+                            'route_id': route_id,
+                            'route_name': route_name,
+                            'trip_headsign': trip_headsign
+                        })
+
+    if not next_buses:
+        return render_template('bus_times.html', error='No upcoming buses found for this stop.', stop_id=stop_id)
+
+    # Sort buses by arrival time
+    next_buses.sort(key=lambda x: x['arrival_time'])
+
+    # Limit to next 5 buses
+    next_buses = next_buses[:5]
+
+    stop_name = stops_dict[stop_id]
+
+    # Calculate countdown and format arrival time
+    now = datetime.now(hsr_timezone)
+    for bus in next_buses:
+        countdown = int((bus['arrival_time'] - now).total_seconds() / 60)
+        bus['countdown'] = max(countdown, 0)
+        bus['arrival_time_formatted'] = bus['arrival_time'].strftime('%I:%M %p')
+
+    return render_template('bus_times.html', buses=next_buses, stop_name=stop_name, stop_id=stop_id)
 
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():

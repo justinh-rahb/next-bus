@@ -120,7 +120,10 @@ def get_next_bus():
         # Fetch GTFS Realtime data
         response = requests.get(GTFS_REALTIME_URL)
         if response.status_code != 200:
-            raise Exception(f'Failed to fetch realtime data: {response.status_code}')
+            # Handle non-200 status codes gracefully
+            error_message = f'Failed to fetch realtime data (status code: {response.status_code})'
+            print(error_message)
+            return render_template('bus_times.html', error='Unable to fetch realtime data. Please try again later.')
 
         feed = gtfs_realtime_pb2.FeedMessage()
         feed.ParseFromString(response.content)
@@ -149,6 +152,9 @@ def get_next_bus():
                                 'trip_headsign': trip_headsign
                             })
 
+        if not next_buses:
+            return render_template('bus_times.html', error='No upcoming buses found for this stop.', stop_id=stop_id)
+
         # Sort buses by arrival time
         next_buses.sort(key=lambda x: x['arrival_time'])
 
@@ -166,8 +172,10 @@ def get_next_bus():
 
         return render_template('bus_times.html', buses=next_buses, stop_name=stop_name, stop_id=stop_id)
     except Exception as e:
+        # Log the exception for debugging purposes
         print(f"An error occurred: {e}")
-        return render_template('bus_times.html', error='An unexpected error occurred.')
+        # Return a user-friendly error message without breaking the app
+        return render_template('bus_times.html', error='An unexpected error occurred. Please try again later.')
 
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():

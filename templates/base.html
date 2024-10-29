@@ -40,14 +40,14 @@
             // Autocomplete for stop names
             var stopNameInput = document.getElementById('stop_name');
             var stopIdInput = document.getElementById('stop_id');
-
+        
             if (stopNameInput && stopIdInput) {
                 var awesomplete = new Awesomplete(stopNameInput, {
                     minChars: 1,
                     maxItems: 10,
                     autoFirst: true
                 });
-
+        
                 stopNameInput.addEventListener('input', function() {
                     var query = stopNameInput.value;
                     if (query.length >= 1) {
@@ -63,17 +63,44 @@
                             });
                     }
                 });
-
+        
                 stopNameInput.addEventListener('awesomplete-selectcomplete', function(event) {
                     stopIdInput.value = event.text.value;
+                    // Update URL when stop is selected
+                    const newUrl = `${window.location.pathname}?stop=${event.text.value}&name=${encodeURIComponent(event.text.label)}`;
+                    window.history.pushState({ stopId: event.text.value, stopName: event.text.label }, '', newUrl);
                 });
+        
+                // Handle browser back/forward buttons
+                window.onpopstate = function(event) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const stopId = urlParams.get('stop');
+                    const stopName = urlParams.get('name');
+                    if (stopId && stopName) {
+                        stopIdInput.value = stopId;
+                        stopNameInput.value = decodeURIComponent(stopName);
+                        // Trigger HTMX refresh if you're using it
+                        htmx.trigger('#auto-refresh', 'refresh');
+                    }
+                };
+        
+                // Check URL parameters on page load
+                const urlParams = new URLSearchParams(window.location.search);
+                const stopId = urlParams.get('stop');
+                const stopName = urlParams.get('name');
+                if (stopId && stopName) {
+                    stopIdInput.value = stopId;
+                    stopNameInput.value = decodeURIComponent(stopName);
+                    // Trigger initial load if needed
+                    htmx.trigger('#auto-refresh', 'refresh');
+                }
             }
-
-            // Dark mode toggle
+        
+            // Dark mode toggle (existing code)
             const themeToggle = document.getElementById('theme-toggle');
             const currentTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
             document.documentElement.setAttribute('data-theme', currentTheme);
-
+        
             function updateThemeIcon(theme) {
                 const lightIcon = document.getElementById('light-icon');
                 const darkIcon = document.getElementById('dark-icon');
@@ -85,24 +112,20 @@
                     darkIcon.style.display = 'none';
                 }
             }
-
+        
             updateThemeIcon(currentTheme);
-
+        
             if (themeToggle) {
                 themeToggle.addEventListener('click', function() {
                     let theme = document.documentElement.getAttribute('data-theme');
-                    if (theme === "light") {
-                        theme = "dark";
-                    } else {
-                        theme = "light";
-                    }
+                    theme = theme === "light" ? "dark" : "light";
                     document.documentElement.setAttribute('data-theme', theme);
                     localStorage.setItem('theme', theme);
                     updateThemeIcon(theme);
                 });
             }
-
-            // Service Worker registration for PWA
+        
+            // Service Worker registration (existing code)
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
                     console.log('Service Worker registered with scope:', registration.scope);
@@ -110,13 +133,11 @@
                     console.error('Service Worker registration failed:', error);
                 });
             }
-
-            // Handle HTMX request errors
+        
+            // Handle HTMX request errors (existing code)
             document.body.addEventListener('htmx:responseError', function(event) {
                 console.error('HTMX request failed:', event.detail);
-                // Prevent content swap on error
                 event.preventDefault();
-                // Display a temporary error message
                 const errorDiv = document.getElementById('error-message');
                 if (errorDiv) {
                     errorDiv.textContent = 'Error fetching bus times. Retrying...';
@@ -124,7 +145,6 @@
                         errorDiv.textContent = '';
                     }, 5000);
                 }
-                // Retry fetching after 5 seconds
                 setTimeout(function() {
                     htmx.trigger('#auto-refresh', 'refresh');
                 }, 5000);

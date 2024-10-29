@@ -66,20 +66,17 @@
         
                 stopNameInput.addEventListener('awesomplete-selectcomplete', function(event) {
                     stopIdInput.value = event.text.value;
-                    // Update URL when stop is selected
-                    const newUrl = `${window.location.pathname}?stop=${event.text.value}&name=${encodeURIComponent(event.text.label)}`;
-                    window.history.pushState({ stopId: event.text.value, stopName: event.text.label }, '', newUrl);
+                    const newUrl = `${window.location.pathname}?stop=${event.text.value}`;
+                    window.history.pushState({ stopId: event.text.value }, '', newUrl);
                 });
         
                 // Handle browser back/forward buttons
                 window.onpopstate = function(event) {
                     const urlParams = new URLSearchParams(window.location.search);
                     const stopId = urlParams.get('stop');
-                    const stopName = urlParams.get('name');
-                    if (stopId && stopName) {
+                    if (stopId) {
                         stopIdInput.value = stopId;
-                        stopNameInput.value = decodeURIComponent(stopName);
-                        // Trigger HTMX refresh if you're using it
+                        // Trigger HTMX refresh
                         htmx.trigger('#auto-refresh', 'refresh');
                     }
                 };
@@ -87,11 +84,9 @@
                 // Check URL parameters on page load
                 const urlParams = new URLSearchParams(window.location.search);
                 const stopId = urlParams.get('stop');
-                const stopName = urlParams.get('name');
-                if (stopId && stopName) {
+                if (stopId) {
                     stopIdInput.value = stopId;
-                    stopNameInput.value = decodeURIComponent(stopName);
-                    // Trigger initial load if needed
+                    // Trigger initial load
                     htmx.trigger('#auto-refresh', 'refresh');
                 }
             }

@@ -28,6 +28,23 @@ header h1 {
     text-align: center;
 }
 
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.github-link {
+    color: var(--text-color);
+    font-size: 1.5em;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.github-link:hover {
+    color: var(--accent-color);
+}
+
 #input-form {
     width: 100%;
     max-width: 600px;

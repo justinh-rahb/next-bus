@@ -47,19 +47,7 @@
                 });
 
                 stopNameInput.addEventListener('input', function() {
-                    var query = stopNameInput.value.trim();
-                    
-                    // If input is a number and at least 4 digits
-                    if (/^\d+$/.test(query) && query.length >= 4) {
-                        // Direct submission with stop number
-                        stopIdInput.value = query;
-                        // Trigger form submission
-                        const form = stopNameInput.closest('form');
-                        if (form) form.submit();
-                        return;
-                    }
-
-                    // Otherwise, proceed with name search
+                    var query = stopNameInput.value;
                     if (query.length >= 1) {
                         fetch('/autocomplete?q=' + encodeURIComponent(query))
                             .then(response => response.json())

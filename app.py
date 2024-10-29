@@ -42,7 +42,7 @@ import logging
 import pytz
 import requests
 from requests.exceptions import RequestException, SSLError, ConnectionError, Timeout
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, send_from_directory
 from google.transit import gtfs_realtime_pb2
 
 logging.basicConfig(level=logging.INFO)
@@ -55,6 +55,9 @@ GTFS_STATIC_URL = os.environ.get('GTFS_STATIC_URL', 'https://opendata.hamilton.c
 
 # Timezone for Hamilton, Ontario
 hsr_timezone = pytz.timezone('America/Toronto')
+
+# JSON Mode Flag
+JSON_MODE = os.environ.get('JSON_MODE', 'false').lower() == 'true'
 
 # Download and parse GTFS static data
 def download_and_extract_gtfs_static():
@@ -102,37 +105,36 @@ trips = load_trips(gtfs_zip)
 
 @app.route('/')
 def index():
-    stop_id = request.args.get('stop_id')
-    if stop_id:
-        return render_template('index.html', stop_id=stop_id)
-    else:
-        return render_template('index.html')
+    return render_template('index.html')
 
 @app.route('/next-bus', methods=['GET'])
 def get_next_bus():
     stop_id = request.args.get('stop_id')
     if not stop_id:
-        return render_template('bus_times.html', error='No stop selected')
+        error_message = 'No stop selected'
+        if JSON_MODE:
+            return jsonify({'error': error_message}), 400
+        else:
+            return render_template('bus_times.html', error=error_message)
 
     if stop_id not in stops_dict:
-        return render_template('bus_times.html', error='Invalid stop ID')
+        error_message = 'Invalid stop ID'
+        if JSON_MODE:
+            return jsonify({'error': error_message}), 400
+        else:
+            return render_template('bus_times.html', error=error_message)
 
     try:
         # Fetch GTFS Realtime data with timeout and SSL error handling
         response = requests.get(GTFS_REALTIME_URL, timeout=10)
-        response.raise_for_status()  # Raises HTTPError for bad responses (4xx or 5xx)
-    except SSLError as ssl_err:
-        print(f"SSL error occurred: {ssl_err}")
-        return render_template('bus_times.html', error='SSL error occurred while fetching realtime data.')
-    except Timeout as timeout_err:
-        print(f"Timeout error occurred: {timeout_err}")
-        return render_template('bus_times.html', error='Request timed out while fetching realtime data.')
-    except ConnectionError as conn_err:
-        print(f"Connection error occurred: {conn_err}")
-        return render_template('bus_times.html', error='Connection error occurred while fetching realtime data.')
-    except RequestException as req_err:
-        print(f"An error occurred while fetching realtime data: {req_err}")
-        return render_template('bus_times.html', error='An error occurred while fetching realtime data.')
+        response.raise_for_status()
+    except Exception as e:
+        print(f"An error occurred while fetching realtime data: {e}")
+        if JSON_MODE:
+            return jsonify({'error': 'Failed to fetch realtime data'}), 500
+        else:
+            # Return the same template without replacing the content
+            return '', 204
 
     try:
         # Parse the GTFS Realtime data
@@ -140,7 +142,10 @@ def get_next_bus():
         feed.ParseFromString(response.content)
     except Exception as e:
         print(f"Error parsing GTFS Realtime data: {e}")
-        return render_template('bus_times.html', error='Error processing realtime data.')
+        if JSON_MODE:
+            return jsonify({'error': 'Failed to parse realtime data'}), 500
+        else:
+            return '', 204
 
     current_time = int(time.time())
 
@@ -167,7 +172,11 @@ def get_next_bus():
                         })
 
     if not next_buses:
-        return render_template('bus_times.html', error='No upcoming buses found for this stop.', stop_id=stop_id)
+        error_message = 'No upcoming buses found for this stop.'
+        if JSON_MODE:
+            return jsonify({'error': error_message, 'stop_id': stop_id}), 200
+        else:
+            return render_template('bus_times.html', error=error_message, stop_id=stop_id)
 
     # Sort buses by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])
@@ -183,8 +192,17 @@ def get_next_bus():
         countdown = int((bus['arrival_time'] - now).total_seconds() / 60)
         bus['countdown'] = max(countdown, 0)
         bus['arrival_time_formatted'] = bus['arrival_time'].strftime('%I:%M %p')
+        # Convert arrival_time to ISO format for JSON serialization
+        bus['arrival_time'] = bus['arrival_time'].isoformat()
 
-    return render_template('bus_times.html', buses=next_buses, stop_name=stop_name, stop_id=stop_id)
+    if JSON_MODE:
+        return jsonify({
+            'buses': next_buses,
+            'stop_name': stop_name,
+            'stop_id': stop_id
+        })
+    else:
+        return render_template('bus_times.html', buses=next_buses, stop_name=stop_name, stop_id=stop_id)
 
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():
@@ -195,6 +213,15 @@ def autocomplete():
         if query in stop['stop_name'].lower()
     ][:10]  # Limit to 10 suggestions
     return jsonify(suggestions)
+
+# Routes for PWA
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json')
+
+@app.route('/service-worker.js')
+def service_worker():
+    return send_from_directory('static', 'service-worker.js')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

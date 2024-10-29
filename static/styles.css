@@ -1,60 +1,89 @@
-/* Center the input form */
-#input-form {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+/* Variables for themes */
+:root {
+    --background-color: #ffffff;
+    --text-color: #000000;
+    --list-item-background: #f8f9fa;
 }
 
-/* Fade-out effect */
-.fade-out {
-    animation: fadeOut 1s forwards;
-}
-
-@keyframes fadeOut {
-    to {
-        opacity: 0;
-        visibility: hidden;
-    }
+:root[data-theme='dark'] {
+    --background-color: #121212;
+    --text-color: #ffffff;
+    --list-item-background: #1e1e1e;
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1.5em;
     margin: 0;
     padding: 20px;
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 
 header h1 {
     text-align: center;
 }
 
-form {
-    max-width: 400px;
-    margin: 0 auto;
+header {
+    position: relative;
 }
 
-label, input, button, select {
-    display: block;
-    width: 100%;
-    margin-bottom: 10px;
-}
-
-input, select {
-    padding: 8px;
-    font-size: 16px;
-}
-
-button {
-    padding: 10px;
-    font-size: 18px;
-    background-color: #007bff;
-    color: #fff;
+#theme-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
     border: none;
     cursor: pointer;
 }
 
-button:hover {
-    background-color: #0056b3;
+#theme-toggle svg {
+    fill: var(--text-color);
+}
+
+#input-form {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+#stop-form input[type="text"] {
+    width: 80%;
+    padding: 15px;
+    font-size: 1.5em;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    margin-right: 10px;
+    color: var(--text-color);
+    background-color: var(--background-color);
+}
+
+#stop-form button {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+#stop-form svg {
+    fill: var(--text-color);
+}
+
+#bus-times {
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+#bus-times ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+#bus-times li {
+    background-color: var(--list-item-background);
+    margin: 5px 0;
+    padding: 15px;
+    border-radius: 5px;
+    font-size: 1.2em;
 }
 
 .error {
@@ -64,43 +93,4 @@ button:hover {
 
 h2 {
     text-align: center;
-}
-
-ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-li {
-    background-color: #f8f9fa;
-    margin: 5px 0;
-    padding: 10px;
-    border-radius: 5px;
-}
-
-strong {
-    color: #007bff;
-}
-
-/* Styling for the "Change Stop" button */
-#change-stop-button {
-    display: block;
-    margin: 20px auto;
-    padding: 10px;
-    font-size: 18px;
-    background-color: #6c757d;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-}
-
-#change-stop-button:hover {
-    background-color: #5a6268;
-}
-
-/* Styling for the refresh interval selector */
-#refresh-interval {
-    width: auto;
-    display: inline-block;
-    margin-left: 10px;
 }

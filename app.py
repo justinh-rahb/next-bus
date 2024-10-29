@@ -22,7 +22,7 @@ Functions:
 Constants:
 - GTFS_REALTIME_URL: URL for the GTFS real-time feed.
 - GTFS_STATIC_URL: URL for the GTFS static feed.
-- hsr_timezone: Timezone for Hamilton, Ontario.
+- gtfs_timezone: Timezone for Hamilton, Ontario.
 
 Global Variables:
 - gtfs_zip: In-memory file containing the extracted GTFS static data.
@@ -53,8 +53,8 @@ app = Flask(__name__)
 GTFS_REALTIME_URL = os.environ.get('GTFS_REALTIME_URL', 'https://opendata.hamilton.ca/GTFS-RT/GTFS_TripUpdates.pb')
 GTFS_STATIC_URL = os.environ.get('GTFS_STATIC_URL', 'https://opendata.hamilton.ca/GTFS-Static/Fall2024_GTFSstatic.zip')
 
-# Timezone for Hamilton, Ontario
-hsr_timezone = pytz.timezone('America/Toronto')
+# Local timezone of transit agency
+gtfs_timezone = pytz.timezone(os.getenv('TZ', 'America/Toronto'))
 
 # JSON Mode Flag
 JSON_MODE = os.environ.get('JSON_MODE', 'false').lower() == 'true'
@@ -164,7 +164,7 @@ def get_next_bus():
                     arrival_time = stop_time_update.arrival.time
                     if arrival_time >= current_time:
                         # Convert UNIX timestamp to local time
-                        local_arrival_time = datetime.fromtimestamp(arrival_time, hsr_timezone)
+                        local_arrival_time = datetime.fromtimestamp(arrival_time, gtfs_timezone)
                         next_buses.append({
                             'arrival_time': local_arrival_time,
                             'route_id': route_id,
@@ -188,7 +188,7 @@ def get_next_bus():
     stop_name = stops_dict[stop_id]
 
     # Calculate countdown and format arrival time
-    now = datetime.now(hsr_timezone)
+    now = datetime.now(gtfs_timezone)
     for bus in next_buses:
         countdown = int((bus['arrival_time'] - now).total_seconds() / 60)
         bus['countdown'] = max(countdown, 0)

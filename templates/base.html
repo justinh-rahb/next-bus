@@ -112,16 +112,22 @@
                     const stopId = urlParams.get('stop_id');
                     if (stopId) {
                         stopIdInput.value = stopId;
-                        htmx.trigger('#auto-refresh', 'refresh');
+                        const autoRefreshElement = document.getElementById('auto-refresh');
+                        if (autoRefreshElement) {
+                            htmx.trigger('#auto-refresh', 'refresh');
+                        }
                     }
                 };
-        
+
                 // Check URL parameters on page load
                 const urlParams = new URLSearchParams(window.location.search);
                 const stopId = urlParams.get('stop_id');
                 if (stopId) {
                     stopIdInput.value = stopId;
-                    htmx.trigger('#auto-refresh', 'refresh');
+                    const autoRefreshElement = document.getElementById('auto-refresh');
+                    if (autoRefreshElement) {
+                        htmx.trigger('#auto-refresh', 'refresh');
+                    }
                 }
             }
         

@@ -139,8 +139,8 @@ h2 {
 
 .awesomplete > ul > li:hover,
 .awesomplete > ul > li[aria-selected="true"] {
-    background-color: var(--list-item-background);
-    color: var(--text-color);
+    background-color: #2196F3;
+    color: white;
 }
 
 /* Dark mode specific styles */
@@ -152,12 +152,19 @@ h2 {
 
 :root[data-theme='dark'] .awesomplete > ul > li:hover,
 :root[data-theme='dark'] .awesomplete > ul > li[aria-selected="true"] {
-    background-color: #2d2d2d;
+    background-color: #2196F3;
+    color: white;
 }
 
 /* Override Awesomplete's default mark styling */
 .awesomplete mark {
-    background: none;
-    color: inherit;
-    font-weight: bold;
+    background: #FFC107;
+    color: black;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+:root[data-theme='dark'] .awesomplete mark {
+    background: #FFC107;
+    color: black;
 }

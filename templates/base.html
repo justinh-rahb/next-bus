@@ -38,8 +38,17 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Theme handling - moved outside of stop input check
+            // Theme handling
             const themeToggle = document.getElementById('theme-toggle');
-            const currentTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlTheme = urlParams.get('theme');
+            const currentTheme = urlTheme || localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+            // Only store in localStorage if it wasn't set via URL
+            if (!urlTheme) {
+                localStorage.setItem('theme', currentTheme);
+            }
+
             document.documentElement.setAttribute('data-theme', currentTheme);
         
             function updateThemeIcon(theme) {

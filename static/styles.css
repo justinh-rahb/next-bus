@@ -1,4 +1,16 @@
-/* General styling */
+/* Variables for themes */
+:root {
+    --background-color: #ffffff;
+    --text-color: #000000;
+    --list-item-background: #f8f9fa;
+}
+
+:root[data-theme='dark'] {
+    --background-color: #121212;
+    --text-color: #ffffff;
+    --list-item-background: #1e1e1e;
+}
+
 body {
     font-family: 'Roboto', sans-serif;
     font-size: 1.5em;
@@ -10,63 +22,75 @@ body {
 
 header h1 {
     text-align: center;
-    font-weight: 600;
+}
+
+header {
+    position: relative;
+}
+
+#theme-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+#theme-toggle svg {
+    fill: var(--text-color);
 }
 
 #input-form {
-    max-width: 500px;
+    max-width: 600px;
     margin: 0 auto;
     text-align: center;
 }
 
-.search-bar {
-    display: flex;
-    align-items: center;
-    border: 1px solid #ccc;
-    border-radius: 50px;
-    overflow: hidden;
-    background-color: var(--background-color);
-    transition: box-shadow 0.3s ease;
-}
-
-.search-bar:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
 #stop-form input[type="text"] {
-    flex: 1;
-    padding: 12px 20px;
-    border: none;
-    outline: none;
-    font-size: 1em;
+    width: 80%;
+    padding: 15px;
+    font-size: 1.5em;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    margin-right: 10px;
     color: var(--text-color);
     background-color: var(--background-color);
-    border-radius: 50px 0 0 50px;
 }
 
-#search-button {
+#stop-form button {
     background: none;
     border: none;
-    outline: none;
-    padding: 12px 20px;
     cursor: pointer;
-    transition: background-color 0.3s;
-    display: flex;
-    align-items: center;
 }
 
-#search-button svg {
+#stop-form svg {
     fill: var(--text-color);
-    transition: transform 0.2s ease;
 }
 
-#search-button:hover svg {
-    transform: scale(1.1);
+#bus-times {
+    max-width: 600px;
+    margin: 20px auto;
 }
 
-/* Dark mode variables */
-:root[data-theme='dark'] {
-    --background-color: #121212;
-    --text-color: #ffffff;
-    --input-border: #444;
+#bus-times ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+#bus-times li {
+    background-color: var(--list-item-background);
+    margin: 5px 0;
+    padding: 15px;
+    border-radius: 5px;
+    font-size: 1.2em;
+}
+
+.error {
+    color: red;
+    text-align: center;
+}
+
+h2 {
+    text-align: center;
 }

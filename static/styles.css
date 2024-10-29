@@ -173,38 +173,47 @@ h2 {
 @media (max-width: 600px) {
     body {
         padding: 10px;
-        font-size: 16px;
+        font-size: 14px;
     }
 
     header h1 {
-        font-size: 1.5em;
+        font-size: 24px;
         margin: 10px 0;
+    }
+
+    #input-form {
+        max-width: 100%;
+    }
+
+    #stop-form {
+        gap: 5px;
     }
 
     #stop-form input[type="text"] {
         font-size: 16px;
-        padding: 12px;
+        padding: 8px;
+        height: 40px;
     }
 
     #search-button {
-        padding: 12px;
-        height: 48px;
-        width: 48px;
-        font-size: 1.2em;
+        padding: 8px;
+        height: 40px;
+        width: 40px;
+        font-size: 16px;
     }
 
-    #theme-toggle {
-        font-size: 1.2em;
-        padding: 6px;
+    #bus-times {
+        margin: 10px auto;
     }
 
     #bus-times li {
-        font-size: 1em;
-        padding: 12px;
+        font-size: 14px;
+        padding: 10px;
+        margin: 3px 0;
     }
 
     .awesomplete > ul > li {
         padding: 8px;
-        font-size: 16px;
+        font-size: 14px;
     }
 }

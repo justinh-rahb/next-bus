@@ -3,14 +3,12 @@
 {% block content %}
     <!-- Input form -->
     <div id="input-form">
-        <form id="stop-form" hx-get="/next-bus" hx-target="#bus-times" hx-swap="innerHTML">
+        <form id="stop-form" hx-get="/next-bus" hx-target="#bus-times" hx-swap="innerHTML" class="search-bar">
             <input type="text" name="stop_name" id="stop_name" placeholder="Enter stop name" autocomplete="off" required>
             <input type="hidden" name="stop_id" id="stop_id" value="{{ stop_id if stop_id else '' }}">
-            <button type="submit" id="search-button">
-                <!-- Inline arrow icon -->
+            <button type="submit" id="search-button" aria-label="Search">
                 <svg width="24" height="24" viewBox="0 0 24 24">
                     <path d="M10 17l5-5-5-5v10z"/>
-                    <path d="M0 24V0h24v24H0z" fill="none"/>
                 </svg>
             </button>
         </form>

@@ -168,3 +168,43 @@ h2 {
     background: #FFC107;
     color: black;
 }
+
+/* Mobile responsive adjustments */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+        font-size: 16px;
+    }
+
+    header h1 {
+        font-size: 1.5em;
+        margin: 10px 0;
+    }
+
+    #stop-form input[type="text"] {
+        font-size: 16px;
+        padding: 12px;
+    }
+
+    #search-button {
+        padding: 12px;
+        height: 48px;
+        width: 48px;
+        font-size: 1.2em;
+    }
+
+    #theme-toggle {
+        font-size: 1.2em;
+        padding: 6px;
+    }
+
+    #bus-times li {
+        font-size: 1em;
+        padding: 12px;
+    }
+
+    .awesomplete > ul > li {
+        padding: 8px;
+        font-size: 16px;
+    }
+}

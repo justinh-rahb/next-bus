@@ -105,7 +105,8 @@ trips = load_trips(gtfs_zip)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    stop_id = request.args.get('stop_id')
+    return render_template('index.html', stop_id=stop_id)
 
 @app.route('/next-bus', methods=['GET'])
 def get_next_bus():

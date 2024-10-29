@@ -5,7 +5,7 @@
     <div id="input-form">
         <form id="stop-form" hx-get="/next-bus" hx-target="#bus-times" hx-swap="innerHTML">
             <input type="text" name="stop_name" id="stop_name" placeholder="Enter stop name" autocomplete="off" required>
-            <input type="hidden" name="stop_id" id="stop_id">
+            <input type="hidden" name="stop_id" id="stop_id" value="{{ stop_id if stop_id else '' }}">
             <button type="submit" id="search-button">
                 <!-- Inline arrow icon -->
                 <svg width="24" height="24" viewBox="0 0 24 24">
@@ -17,5 +17,10 @@
     </div>
     <!-- Error message -->
     <div id="error-message"></div>
-    <div id="bus-times"></div>
+    <div id="bus-times">
+        {% if stop_id %}
+            <!-- Load bus times if stop_id is provided -->
+            <div hx-get="/next-bus?stop_id={{ stop_id }}" hx-trigger="load" hx-target="#bus-times" hx-swap="innerHTML"></div>
+        {% endif %}
+    </div>
 {% endblock %}

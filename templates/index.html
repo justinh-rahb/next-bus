@@ -3,7 +3,7 @@
 {% block content %}
     <!-- Input form -->
     <div id="input-form">
-        <form id="stop-form" hx-get="/next-bus" hx-target="#bus-times" hx-swap="innerHTML" class="search-bar">
+        <form id="stop-form" hx-get="/next-bus" hx-target="#bus-times" hx-swap="innerHTML">
             <input type="text" name="stop_name" id="stop_name" placeholder="Enter stop name" autocomplete="off" required>
             <input type="hidden" name="stop_id" id="stop_id" value="{{ stop_id if stop_id else '' }}">
             <button type="submit" id="search-button" aria-label="Search">

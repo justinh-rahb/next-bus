@@ -2,37 +2,15 @@
     <div class="error">{{ error }}</div>
 {% elif buses %}
     <h2>Upcoming Buses at {{ stop_name }}</h2>
-    <table class="bus-table">
-        <thead>
-            <tr>
-                <th>Route</th>
-                <th>Destination</th>
-                <th>Countdown</th>
-                <th>Arrival Time</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for bus in buses %}
-                <tr>
-                    <td>{{ bus.route_name }}</td>
-                    <td>{{ bus.trip_headsign }}</td>
-                    <td>{{ bus.countdown }} min</td>
-                    <td>{{ bus.arrival_time_formatted }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <div>
-        <label for="refresh-interval">Auto-refresh every:</label>
-        <select id="refresh-interval">
-            <option value="5000">5 seconds</option>
-            <option value="10000">10 seconds</option>
-            <option value="30000">30 seconds</option>
-            <option value="60000" selected>60 seconds</option>
-        </select>
-    </div>
+    <ul>
+        {% for bus in buses %}
+            <li>
+                <strong>Route {{ bus.route_name }}</strong> to {{ bus.trip_headsign }} arriving in {{ bus.countdown }} minutes (at {{ bus.arrival_time_formatted }})
+            </li>
+        {% endfor %}
+    </ul>
     <!-- Hidden div to trigger auto-refresh -->
-    <div id="auto-refresh" hx-get="/next-bus?stop_id={{ stop_id }}" hx-trigger="every 60000ms" hx-target="#bus-times" hx-swap="innerHTML"></div>
+    <div id="auto-refresh" hx-get="/next-bus?stop_id={{ stop_id }}" hx-trigger="every 60000ms, refresh" hx-target="#bus-times" hx-swap="innerHTML"></div>
 {% else %}
     <p>No upcoming buses found for this stop.</p>
 {% endif %}

@@ -129,6 +129,7 @@ h2 {
     border: 1px solid #ccc;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    color: var(--text-color);
 }
 
 .awesomplete > ul > li {
@@ -139,4 +140,24 @@ h2 {
 .awesomplete > ul > li:hover,
 .awesomplete > ul > li[aria-selected="true"] {
     background-color: var(--list-item-background);
+    color: var(--text-color);
+}
+
+/* Dark mode specific styles */
+:root[data-theme='dark'] .awesomplete > ul {
+    background: var(--background-color);
+    border-color: #444;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+:root[data-theme='dark'] .awesomplete > ul > li:hover,
+:root[data-theme='dark'] .awesomplete > ul > li[aria-selected="true"] {
+    background-color: #2d2d2d;
+}
+
+/* Override Awesomplete's default mark styling */
+.awesomplete mark {
+    background: none;
+    color: inherit;
+    font-weight: bold;
 }

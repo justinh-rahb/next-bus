@@ -72,7 +72,7 @@
                 document.querySelector('form').addEventListener('submit', function(event) {
                     const stopId = stopIdInput.value;
                     if (stopId) {
-                        const newUrl = `${window.location.pathname}?stop=${stopId}`;
+                        const newUrl = `${window.location.pathname}?stop_id=${stopId}`;
                         window.history.pushState({ stopId: stopId }, '', newUrl);
                     }
                 });
@@ -80,7 +80,7 @@
                 // Handle browser back/forward buttons
                 window.onpopstate = function(event) {
                     const urlParams = new URLSearchParams(window.location.search);
-                    const stopId = urlParams.get('stop');
+                    const stopId = urlParams.get('stop_id');
                     if (stopId) {
                         stopIdInput.value = stopId;
                         // Trigger HTMX refresh
@@ -90,7 +90,7 @@
         
                 // Check URL parameters on page load
                 const urlParams = new URLSearchParams(window.location.search);
-                const stopId = urlParams.get('stop');
+                const stopId = urlParams.get('stop_id');
                 if (stopId) {
                     stopIdInput.value = stopId;
                     // Trigger initial load
@@ -98,7 +98,7 @@
                 }
             }
         
-            // Dark mode toggle (existing code)
+            // Dark mode toggle
             const themeToggle = document.getElementById('theme-toggle');
             const currentTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
             document.documentElement.setAttribute('data-theme', currentTheme);
@@ -120,14 +120,18 @@
             if (themeToggle) {
                 themeToggle.addEventListener('click', function() {
                     let theme = document.documentElement.getAttribute('data-theme');
-                    theme = theme === "light" ? "dark" : "light";
+                    if (theme === "light") {
+                        theme = "dark";
+                    } else {
+                        theme = "light";
+                    }
                     document.documentElement.setAttribute('data-theme', theme);
                     localStorage.setItem('theme', theme);
                     updateThemeIcon(theme);
                 });
             }
         
-            // Service Worker registration (existing code)
+            // Service Worker registration for PWA
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
                     console.log('Service Worker registered with scope:', registration.scope);
@@ -136,10 +140,12 @@
                 });
             }
         
-            // Handle HTMX request errors (existing code)
+            // Handle HTMX request errors
             document.body.addEventListener('htmx:responseError', function(event) {
                 console.error('HTMX request failed:', event.detail);
+                // Prevent content swap on error
                 event.preventDefault();
+                // Display a temporary error message
                 const errorDiv = document.getElementById('error-message');
                 if (errorDiv) {
                     errorDiv.textContent = 'Error fetching bus times. Retrying...';
@@ -147,6 +153,7 @@
                         errorDiv.textContent = '';
                     }, 5000);
                 }
+                // Retry fetching after 5 seconds
                 setTimeout(function() {
                     htmx.trigger('#auto-refresh', 'refresh');
                 }, 5000);

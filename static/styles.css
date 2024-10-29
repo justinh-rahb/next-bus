@@ -21,30 +21,20 @@ body {
 }
 
 header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 10px;
-}
-
-.header-left, .header-right {
-    flex: 1;
-    display: flex;
-    align-items: center;
-}
-
-.header-left {
-    justify-content: flex-start;
-}
-
-.header-right {
-    justify-content: flex-end;
+    position: relative;
 }
 
 header h1 {
     text-align: center;
-    margin: 0;
-    flex: 2;
+}
+
+.header-icons {
+    position: absolute;
+    top: 0;
+    right: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
 }
 
 .github-link {
@@ -102,9 +92,6 @@ header h1 {
 }
 
 #theme-toggle {
-    position: absolute;
-    top: 0;
-    right: 10px;
     background: none;
     border: none;
     cursor: pointer;

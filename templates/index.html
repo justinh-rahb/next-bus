@@ -4,7 +4,7 @@
     <!-- Input form -->
     <div id="input-form">
         <form id="stop-form" hx-get="/next-bus" hx-target="#bus-times" hx-swap="innerHTML">
-            <input type="text" name="stop_name" id="stop_name" placeholder="Enter stop name" autocomplete="off" required>
+            <input type="text" id="stop-search" placeholder="Enter stop name or number" autocomplete="off" required>
             <input type="hidden" name="stop_id" id="stop_id" value="{{ stop_id if stop_id else '' }}">
             <button type="submit" id="search-button" aria-label="Search">
                 <i class="fas fa-lg fa-arrow-right"></i>

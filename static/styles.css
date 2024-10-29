@@ -20,43 +20,30 @@ body {
     color: var(--text-color);
 }
 
-header h1 {
-    text-align: center;
-}
-
 header {
     position: relative;
 }
 
-#theme-toggle {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-#theme-toggle svg {
-    fill: var(--text-color);
+header h1 {
+    text-align: center;
 }
 
 #input-form {
+    width: 100%;
     max-width: 600px;
     margin: 0 auto;
-    text-align: center;
 }
 
 #stop-form {
     display: flex;
     align-items: center;
     gap: 10px;
-    max-width: 600px;
-    margin: 0 auto;
+    width: 100%;
 }
 
 #stop-form input[type="text"] {
     flex: 1;
+    width: calc(100% - 60px);
     padding: 15px;
     font-size: 1.5em;
     border: 2px solid #ccc;
@@ -65,14 +52,44 @@ header {
     background-color: var(--background-color);
 }
 
-#stop-form button {
+#search-button {
+    background: none;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 15px;
+    color: var(--text-color);
+    font-size: 1.5em;
+    height: 56px;
+    width: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+#search-button:hover {
+    opacity: 0.8;
+}
+
+#theme-toggle {
+    position: absolute;
+    top: 0;
+    right: 10px;
     background: none;
     border: none;
     cursor: pointer;
+    padding: 8px;
+    color: var(--text-color);
+    font-size: 1.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
 }
 
-#stop-form svg {
-    fill: var(--text-color);
+#theme-toggle:hover {
+    opacity: 0.8;
 }
 
 #bus-times {
@@ -102,41 +119,24 @@ h2 {
     text-align: center;
 }
 
-/* Theme toggle button styles */
-#theme-toggle {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    color: var(--text-color);
-    font-size: 1.5em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* Autocomplete styles */
+.awesomplete {
+    width: 100%;
 }
 
-#theme-toggle:hover {
-    opacity: 0.8;
-}
-
-/* Search button styles */
-#search-button {
-    background: none;
-    border: 2px solid #ccc;
+.awesomplete > ul {
+    background: var(--background-color);
+    border: 1px solid #ccc;
     border-radius: 5px;
-    cursor: pointer;
-    padding: 15px;
-    color: var(--text-color);
-    font-size: 1.5em;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-#search-button:hover {
-    opacity: 0.8;
+.awesomplete > ul > li {
+    color: var(--text-color);
+    padding: 10px;
+}
+
+.awesomplete > ul > li:hover,
+.awesomplete > ul > li[aria-selected="true"] {
+    background-color: var(--list-item-background);
 }

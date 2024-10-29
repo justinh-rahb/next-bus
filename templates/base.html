@@ -66,8 +66,15 @@
         
                 stopNameInput.addEventListener('awesomplete-selectcomplete', function(event) {
                     stopIdInput.value = event.text.value;
-                    const newUrl = `${window.location.pathname}?stop=${event.text.value}`;
-                    window.history.pushState({ stopId: event.text.value }, '', newUrl);
+                });
+        
+                // Add form submit handler
+                document.querySelector('form').addEventListener('submit', function(event) {
+                    const stopId = stopIdInput.value;
+                    if (stopId) {
+                        const newUrl = `${window.location.pathname}?stop=${stopId}`;
+                        window.history.pushState({ stopId: stopId }, '', newUrl);
+                    }
                 });
         
                 // Handle browser back/forward buttons

@@ -1,15 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160">
-  <!-- Main bus body frame with slight rounded corners -->
-  <rect x="30" y="30" width="140" height="100" fill="#2563eb" stroke="black" stroke-width="4" rx="6"/>
-  
-  <!-- Single-pane windshield with slight rounded corners -->
-  <rect x="40" y="40" width="120" height="60" fill="#93c5fd" stroke="black" stroke-width="3" rx="4"/>
-  
-  <!-- Headlights -->
-  <circle cx="55" cy="115" r="8" fill="#fef08a" stroke="black" stroke-width="2"/>
-  <circle cx="145" cy="115" r="8" fill="#fef08a" stroke="black" stroke-width="2"/>
-  
-  <!-- Angular wheels -->
-  <rect x="40" y="130" width="20" height="20" fill="black" stroke="black" stroke-width="4"/>
-  <rect x="140" y="130" width="20" height="20" fill="black" stroke="black" stroke-width="4"/>
+    <!-- White circular background -->
+    <circle cx="100" cy="80" r="75" fill="white"/>
+    <!-- Main bus body frame with slight rounded corners -->
+    <rect x="30" y="30" width="140" height="100" fill="#2563eb" stroke="black" stroke-width="4" rx="6"/>
+    <!-- Single-pane windshield with slight rounded corners -->
+    <rect x="40" y="40" width="120" height="60" fill="#93c5fd" stroke="black" stroke-width="3" rx="4"/>
+    <!-- Headlights -->
+    <circle cx="55" cy="115" r="8" fill="#fef08a" stroke="black" stroke-width="2"/>
+    <circle cx="145" cy="115" r="8" fill="#fef08a" stroke="black" stroke-width="2"/>
+    <!-- Angular wheels -->
+    <rect x="40" y="130" width="20" height="20" fill="black" stroke="black" stroke-width="4"/>
+    <rect x="140" y="130" width="20" height="20" fill="black" stroke="black" stroke-width="4"/>
 </svg>

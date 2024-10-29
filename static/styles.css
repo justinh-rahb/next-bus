@@ -94,3 +94,35 @@ header {
 h2 {
     text-align: center;
 }
+
+/* Theme toggle button styles */
+#theme-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    color: var(--text-color);
+    font-size: 1.5em;
+}
+
+#theme-toggle:hover {
+    opacity: 0.8;
+}
+
+/* Search button styles */
+#search-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    color: var(--text-color);
+    font-size: 1.5em;
+    vertical-align: middle;
+}
+
+#search-button:hover {
+    opacity: 0.8;
+}

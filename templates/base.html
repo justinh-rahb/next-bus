@@ -24,13 +24,8 @@
         <h1>Next Bus Time</h1>
         <!-- Theme toggle button -->
         <button id="theme-toggle">
-            <!-- Theme icon -->
-            <svg id="theme-icon" width="24" height="24" viewBox="0 0 24 24">
-                <!-- Light mode icon -->
-                <path id="light-icon" d="M12 4.354a7.646 7.646 0 1 0 0 15.292 7.646 7.646 0 0 0 0-15.292zm0 13.292a5.646 5.646 0 1 1 0-11.292 5.646 5.646 0 0 1 0 11.292z"/>
-                <!-- Dark mode icon -->
-                <path id="dark-icon" style="display:none;" d="M9.37 5.51A7.502 7.502 0 0 0 12 20a7.5 7.5 0 0 0 0-15c-.87 0-1.71.16-2.5.46.87.58 1.5 1.53 1.5 2.65 0 1.77-1.43 3.2-3.2 3.2-.84 0-1.6-.32-2.16-.84A7.5 7.5 0 0 0 9.37 5.5z"/>
-            </svg>
+            <i class="fas fa-sun" id="light-icon"></i>
+            <i class="fas fa-moon" id="dark-icon" style="display:none;"></i>
         </button>
     </header>
     <main>
@@ -81,9 +76,9 @@
                 const darkIcon = document.getElementById('dark-icon');
                 if (theme === 'dark') {
                     lightIcon.style.display = 'none';
-                    darkIcon.style.display = 'block';
+                    darkIcon.style.display = 'inline-block';
                 } else {
-                    lightIcon.style.display = 'block';
+                    lightIcon.style.display = 'inline-block';
                     darkIcon.style.display = 'none';
                 }
             }

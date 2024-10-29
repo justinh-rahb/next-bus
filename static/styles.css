@@ -49,6 +49,12 @@ header h1 {
     opacity: 0.8;
 }
 
+.logo {
+    height: 50px; /* Adjust size as needed */
+    width: auto;
+    margin: 1rem;
+}
+
 #input-form {
     width: 100%;
     max-width: 600px;

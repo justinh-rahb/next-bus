@@ -25,7 +25,9 @@
         <a href="https://github.com/justinh-rahb/next-bus" target="_blank" class="github-link">
             <i class="fab fa-github"></i>
         </a>
-        <h1>Next Bus</h1>
+        <svg class="logo" width="200" height="160" role="img" aria-label="Next Bus logo">
+            <use href="/static/icons/next-bus.svg#logo"></use>
+        </svg>
         <button id="theme-toggle">
             <i class="fas fa-sun" id="light-icon"></i>
             <i class="fas fa-moon" id="dark-icon" style="display:none;"></i>
@@ -37,7 +39,6 @@
     <!-- JavaScript for the application -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Theme handling - moved outside of stop input check
             // Theme handling
             const themeToggle = document.getElementById('theme-toggle');
             const urlParams = new URLSearchParams(window.location.search);

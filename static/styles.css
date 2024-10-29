@@ -26,7 +26,7 @@ header {
     align-items: center;
     padding: 0 10px;
     height: 60px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 header h1 {
@@ -111,7 +111,7 @@ header h1 {
 
 #bus-times {
     max-width: 600px;
-    margin: 20px auto;
+    margin: 25px auto;
 }
 
 #bus-times ul {
@@ -137,8 +137,15 @@ h2 {
 }
 
 /* Autocomplete styles */
+.input-container {
+    display: flex;
+    gap: 0;
+}
+
 .awesomplete {
-    width: 100%;
+    /* width: 100%; */
+    flex: 1;
+    gap: 0;
 }
 
 .awesomplete > ul {
@@ -158,6 +165,18 @@ h2 {
 .awesomplete > ul > li[aria-selected="true"] {
     background-color: #2196F3;
     color: white;
+}
+
+input[type="text"] {
+    border-right: none; /* Remove right border if there is one */
+    /* Make sure there's no padding on the right side */
+    padding-right: 0;
+}
+
+button[type="submit"] {
+    border-left: none; /* Remove left border if there is one */
+    /* Make sure there's no margin on the left side */
+    margin-left: 0;
 }
 
 /* Dark mode specific styles */

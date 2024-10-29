@@ -25,7 +25,8 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 0 10px;
-    height: 60px; /* Set a fixed height */
+    height: 60px;
+    margin-bottom: 15px;
 }
 
 header h1 {
@@ -39,7 +40,9 @@ header h1 {
     text-decoration: none;
     display: flex;
     align-items: center;
-    height: 40px; /* Match theme-toggle height */
+    height: 40px;
+    padding-inline-end: 6px;
+    padding-inline-start: 6px;
 }
 
 .github-link:hover {
@@ -100,7 +103,6 @@ header h1 {
     align-items: center;
     justify-content: center;
     height: 40px;
-    padding: 0 8px;
 }
 
 #theme-toggle:hover {

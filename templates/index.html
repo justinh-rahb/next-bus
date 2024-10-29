@@ -1,21 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-    {% if stop_id %}
-        <!-- Load bus times if stop_id is provided -->
-        <div id="bus-times" hx-get="/next-bus?stop_id={{ stop_id }}" hx-trigger="load" hx-swap="innerHTML"></div>
-        <!-- "Change Stop" button -->
-        <button id="change-stop-button">Change Stop</button>
-    {% else %}
-        <!-- Input form -->
-        <div id="input-form">
-            <form id="stop-form" hx-get="/next-bus" hx-target="#bus-times" hx-swap="innerHTML" hx-on="htmx:beforeOnLoad: fadeOutForm()">
-                <label for="stop_name">Enter Stop Name:</label>
-                <input type="text" name="stop_name" id="stop_name" placeholder="Enter stop name" autocomplete="off" required>
-                <input type="hidden" name="stop_id" id="stop_id">
-                <button type="submit">Get Next Bus</button>
-            </form>
-        </div>
-        <div id="bus-times"></div>
-    {% endif %}
+    <!-- Input form -->
+    <div id="input-form">
+        <form id="stop-form" hx-get="/next-bus" hx-target="#bus-times" hx-swap="innerHTML">
+            <input type="text" name="stop_name" id="stop_name" placeholder="Enter stop name" autocomplete="off" required>
+            <input type="hidden" name="stop_id" id="stop_id" value="{{ stop_id if stop_id else '' }}">
+            <button type="submit" id="search-button" aria-label="Search">
+                <i class="fas fa-lg fa-arrow-right"></i>
+            </button>
+        </form>
+    </div>
+    <!-- Error message -->
+    <div id="error-message"></div>
+    <div id="bus-times">
+        {% if stop_id %}
+            <!-- Load bus times if stop_id is provided -->
+            <div hx-get="/next-bus?stop_id={{ stop_id }}" hx-trigger="load" hx-target="#bus-times" hx-swap="innerHTML"></div>
+        {% endif %}
+    </div>
 {% endblock %}

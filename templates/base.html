@@ -4,15 +4,30 @@
     <meta charset="UTF-8">
     <title>Next Bus Time</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.8.4"></script>
     <!-- Awesomplete CSS and JS for Autocomplete -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
+    <!-- PWA Manifest and Icons -->
+    <link rel="manifest" href="{{ url_for('manifest') }}">
+    <meta name="theme-color" content="#007bff">
+    <!-- Mobile Capable -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet">
 </head>
 <body>
     <header>
         <h1>Next Bus Time</h1>
+        <!-- Theme toggle button -->
+        <button id="theme-toggle">
+            <i class="fas fa-sun" id="light-icon"></i>
+            <i class="fas fa-moon" id="dark-icon" style="display:none;"></i>
+        </button>
     </header>
     <main>
         {% block content %}{% endblock %}
@@ -20,26 +35,6 @@
     <!-- JavaScript for the application -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Handle the "Change Stop" button
-            const changeStopButton = document.getElementById('change-stop-button');
-            if (changeStopButton) {
-                changeStopButton.addEventListener('click', function() {
-                    window.location.href = '/';
-                });
-            }
-
-            // Handle the refresh interval selection
-            const refreshIntervalSelect = document.getElementById('refresh-interval');
-            const autoRefreshDiv = document.getElementById('auto-refresh');
-
-            if (refreshIntervalSelect && autoRefreshDiv) {
-                refreshIntervalSelect.addEventListener('change', function() {
-                    const interval = refreshIntervalSelect.value;
-                    autoRefreshDiv.setAttribute('hx-trigger', `every ${interval}ms`);
-                    htmx.process(autoRefreshDiv); // Re-initialize HTMX on the element
-                });
-            }
-
             // Autocomplete for stop names
             var stopNameInput = document.getElementById('stop_name');
             var stopIdInput = document.getElementById('stop_id');
@@ -71,15 +66,68 @@
                     stopIdInput.value = event.text.value;
                 });
             }
-        });
 
-        // Function to fade out the input form
-        function fadeOutForm() {
-            const inputForm = document.getElementById('input-form');
-            if (inputForm) {
-                inputForm.classList.add('fade-out');
+            // Dark mode toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+            document.documentElement.setAttribute('data-theme', currentTheme);
+
+            function updateThemeIcon(theme) {
+                const lightIcon = document.getElementById('light-icon');
+                const darkIcon = document.getElementById('dark-icon');
+                if (theme === 'dark') {
+                    lightIcon.style.display = 'none';
+                    darkIcon.style.display = 'inline-block';
+                } else {
+                    lightIcon.style.display = 'inline-block';
+                    darkIcon.style.display = 'none';
+                }
             }
-        }
+
+            updateThemeIcon(currentTheme);
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    let theme = document.documentElement.getAttribute('data-theme');
+                    if (theme === "light") {
+                        theme = "dark";
+                    } else {
+                        theme = "light";
+                    }
+                    document.documentElement.setAttribute('data-theme', theme);
+                    localStorage.setItem('theme', theme);
+                    updateThemeIcon(theme);
+                });
+            }
+
+            // Service Worker registration for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                }).catch(function(error) {
+                    console.error('Service Worker registration failed:', error);
+                });
+            }
+
+            // Handle HTMX request errors
+            document.body.addEventListener('htmx:responseError', function(event) {
+                console.error('HTMX request failed:', event.detail);
+                // Prevent content swap on error
+                event.preventDefault();
+                // Display a temporary error message
+                const errorDiv = document.getElementById('error-message');
+                if (errorDiv) {
+                    errorDiv.textContent = 'Error fetching bus times. Retrying...';
+                    setTimeout(function() {
+                        errorDiv.textContent = '';
+                    }, 5000);
+                }
+                // Retry fetching after 5 seconds
+                setTimeout(function() {
+                    htmx.trigger('#auto-refresh', 'refresh');
+                }, 5000);
+            });
+        });
     </script>
 </body>
 </html>

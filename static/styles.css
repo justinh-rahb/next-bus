@@ -1,60 +1,113 @@
-/* Center the input form */
-#input-form {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+/* Variables for themes */
+:root {
+    --background-color: #ffffff;
+    --text-color: #000000;
+    --list-item-background: #f8f9fa;
 }
 
-/* Fade-out effect */
-.fade-out {
-    animation: fadeOut 1s forwards;
-}
-
-@keyframes fadeOut {
-    to {
-        opacity: 0;
-        visibility: hidden;
-    }
+:root[data-theme='dark'] {
+    --background-color: #121212;
+    --text-color: #ffffff;
+    --list-item-background: #1e1e1e;
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1.5em;
     margin: 0;
     padding: 20px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+header {
+    position: relative;
 }
 
 header h1 {
     text-align: center;
 }
 
-form {
-    max-width: 400px;
+#input-form {
+    width: 100%;
+    max-width: 600px;
     margin: 0 auto;
 }
 
-label, input, button, select {
-    display: block;
+#stop-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     width: 100%;
-    margin-bottom: 10px;
 }
 
-input, select {
-    padding: 8px;
-    font-size: 16px;
+#stop-form input[type="text"] {
+    flex: 1;
+    width: calc(100% - 60px);
+    padding: 15px;
+    font-size: 1.5em;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    color: var(--text-color);
+    background-color: var(--background-color);
 }
 
-button {
-    padding: 10px;
-    font-size: 18px;
-    background-color: #007bff;
-    color: #fff;
+#search-button {
+    background: none;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 15px;
+    color: var(--text-color);
+    font-size: 1.5em;
+    height: 76px;
+    width: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+#search-button:hover {
+    opacity: 0.8;
+}
+
+#theme-toggle {
+    position: absolute;
+    top: 0;
+    right: 10px;
+    background: none;
     border: none;
     cursor: pointer;
+    padding: 8px;
+    color: var(--text-color);
+    font-size: 1.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
 }
 
-button:hover {
-    background-color: #0056b3;
+#theme-toggle:hover {
+    opacity: 0.8;
+}
+
+#bus-times {
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+#bus-times ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+#bus-times li {
+    background-color: var(--list-item-background);
+    margin: 5px 0;
+    padding: 15px;
+    border-radius: 5px;
+    font-size: 1.2em;
 }
 
 .error {
@@ -66,41 +119,92 @@ h2 {
     text-align: center;
 }
 
-ul {
-    list-style-type: none;
-    padding: 0;
+/* Autocomplete styles */
+.awesomplete {
+    width: 100%;
 }
 
-li {
-    background-color: #f8f9fa;
-    margin: 5px 0;
-    padding: 10px;
+.awesomplete > ul {
+    background: var(--background-color);
+    border: 1px solid #ccc;
     border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    color: var(--text-color);
 }
 
-strong {
-    color: #007bff;
-}
-
-/* Styling for the "Change Stop" button */
-#change-stop-button {
-    display: block;
-    margin: 20px auto;
+.awesomplete > ul > li {
+    color: var(--text-color);
     padding: 10px;
-    font-size: 18px;
-    background-color: #6c757d;
-    color: #fff;
-    border: none;
-    cursor: pointer;
 }
 
-#change-stop-button:hover {
-    background-color: #5a6268;
+.awesomplete > ul > li:hover,
+.awesomplete > ul > li[aria-selected="true"] {
+    background-color: #2196F3;
+    color: white;
 }
 
-/* Styling for the refresh interval selector */
-#refresh-interval {
-    width: auto;
-    display: inline-block;
-    margin-left: 10px;
+/* Dark mode specific styles */
+:root[data-theme='dark'] .awesomplete > ul {
+    background: var(--background-color);
+    border-color: #444;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+:root[data-theme='dark'] .awesomplete > ul > li:hover,
+:root[data-theme='dark'] .awesomplete > ul > li[aria-selected="true"] {
+    background-color: #2196F3;
+    color: white;
+}
+
+/* Override Awesomplete's default mark styling */
+.awesomplete mark {
+    background: #FFC107;
+    color: black;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+:root[data-theme='dark'] .awesomplete mark {
+    background: #FFC107;
+    color: black;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+        font-size: 16px;
+    }
+
+    header h1 {
+        font-size: 1.5em;
+        margin: 10px 0;
+    }
+
+    #stop-form input[type="text"] {
+        font-size: 16px;
+        padding: 12px;
+    }
+
+    #search-button {
+        padding: 12px;
+        height: 48px;
+        width: 48px;
+        font-size: 1.2em;
+    }
+
+    #theme-toggle {
+        font-size: 1.2em;
+        padding: 6px;
+    }
+
+    #bus-times li {
+        font-size: 1em;
+        padding: 12px;
+    }
+
+    .awesomplete > ul > li {
+        padding: 8px;
+        font-size: 16px;
+    }
 }

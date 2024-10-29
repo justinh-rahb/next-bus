@@ -1,4 +1,4 @@
-# Next Bus Time Application
+# Next Bus
 
 Welcome to the **Next Bus Time** application! This web app provides real-time bus arrival information for the Hamilton Street Railway (HSR) using Flask and HTMX. Users can search for bus stops by name, view upcoming buses with countdown timers, and enjoy an interface similar to a bus stop display.
 

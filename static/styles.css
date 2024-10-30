@@ -13,7 +13,7 @@
 
 body {
     font-family: 'Roboto', sans-serif;
-    font-size: 1.5em;
+    font-size: 1.2em; /* Reduced base font size */
     margin: 0;
     padding: 20px;
     background-color: var(--background-color);
@@ -72,7 +72,7 @@ header h1 {
     flex: 1;
     width: calc(100% - 60px);
     padding: 15px;
-    font-size: 1.5em;
+    font-size: 1.2em;
     border: 2px solid #ccc;
     border-radius: 5px;
     color: var(--text-color);
@@ -86,7 +86,7 @@ header h1 {
     cursor: pointer;
     padding: 15px;
     color: var(--text-color);
-    font-size: 1.5em;
+    font-size: 1.2em;
     height: 76px;
     width: 76px;
     display: flex;
@@ -130,18 +130,18 @@ header h1 {
     align-items: center;
     background-color: var(--list-item-background);
     margin: 5px 0;
-    padding: 15px;
+    padding: 10px; /* Reduced padding for better compactness */
     border-radius: 10px;
-    font-size: 1.2em;
+    font-size: 1em; /* Reduced font size */
     justify-content: space-between;
 }
 
 .route-number {
-    font-size: 1.5em;
+    font-size: 1em; /* Adjusted font size */
     font-weight: bold;
     border: 2px solid var(--text-color);
     border-radius: 8px;
-    padding: 10px;
+    padding: 0; /* Removed extra padding */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -155,29 +155,29 @@ header h1 {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    margin-left: 15px;
+    margin-left: 10px; /* Adjusted for spacing */
     overflow: hidden;
     white-space: nowrap;
 }
 
 .bus-stop {
-    font-size: 1.2em;
+    font-size: 1.1em; /* Slightly reduced */
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
 }
 
 .bus-countdown {
-    font-size: 0.9em;
+    font-size: 0.85em; /* Slightly reduced */
     color: #888;
 }
 
 .arrival-time {
-    font-size: 1.2em;
+    font-size: 1em; /* Adjusted to match */
     font-weight: bold;
     text-align: right;
     flex-shrink: 0;
-    padding-left: 20px;
+    padding-left: 15px; /* Reduced padding for compact look */
     align-self: center;
     min-width: 80px;
 }
@@ -189,6 +189,7 @@ header h1 {
 
 h2 {
     text-align: center;
+    font-size: 1.3em; /* Adjusted for smaller base font size */
 }
 
 /* Autocomplete styles */
@@ -259,30 +260,29 @@ button[type="submit"] {
 /* Full-screen adjustments */
 @media (min-width: 600px) {
     #bus-times li.bus-item {
-        padding: 10px 25px;
+        padding: 10px 20px;
     }
 
     .route-number {
-        width: 60px;
-        height: 60px;
+        width: 50px;
+        height: 50px;
     }
 
     .bus-details {
-        margin-left: 20px;
+        margin-left: 10px;
     }
 
     .bus-stop {
-        font-size: 1.3em;
-    }
-
-    .bus-countdown {
         font-size: 1em;
     }
 
+    .bus-countdown {
+        font-size: 0.85em;
+    }
+
     .arrival-time {
-        font-size: 1.3em;
-        padding-left: 25px;
-        min-width: 100px;
+        font-size: 1em;
+        padding-left: 15px;
     }
 }
 
@@ -290,7 +290,7 @@ button[type="submit"] {
 @media (max-width: 600px) {
     body {
         padding: 10px;
-        font-size: 16px;
+        font-size: 1em;
     }
 
     header {
@@ -336,12 +336,12 @@ button[type="submit"] {
     .route-number {
         width: 40px;
         height: 40px;
-        font-size: 1.2em;
+        font-size: 1em;
         padding: 8px;
     }
 
     .bus-stop {
-        font-size: 1em;
+        font-size: 0.9em;
     }
 
     .bus-countdown {

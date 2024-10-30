@@ -50,7 +50,7 @@ header h1 {
 }
 
 .logo {
-    height: 50px; /* Adjust size as needed */
+    height: 50px;
     width: auto;
     margin: 1rem;
 }
@@ -176,6 +176,8 @@ header h1 {
     text-align: right;
     flex-shrink: 0;
     align-self: center;
+    margin-left: auto; /* pushes the arrival time to the far right */
+    padding-left: 10px; /* add space between bus details and arrival time */
 }
 
 .error {
@@ -252,6 +254,35 @@ button[type="submit"] {
     color: black;
 }
 
+/* Full-screen adjustments */
+@media (min-width: 600px) {
+    #bus-times li.bus-item {
+        padding: 10px 20px;
+    }
+
+    .route-number {
+        width: 60px;
+        height: 60px;
+    }
+
+    .bus-details {
+        margin-left: 15px;
+    }
+
+    .bus-stop {
+        font-size: 1.3em;
+    }
+
+    .bus-countdown {
+        font-size: 1em;
+    }
+
+    .arrival-time {
+        font-size: 1.3em;
+        padding-left: 20px;
+    }
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 600px) {
     body {
@@ -316,5 +347,6 @@ button[type="submit"] {
 
     .arrival-time {
         font-size: 1em;
+        padding-left: 10px;
     }
 }

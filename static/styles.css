@@ -84,11 +84,10 @@ header h1 {
     border: 2px solid #ccc;
     border-radius: 5px;
     cursor: pointer;
-    padding: 15px;
     color: var(--text-color);
     font-size: 1.2em;
-    height: 76px;
-    width: 76px;
+    height: 61px;
+    width: 61px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -260,7 +259,7 @@ button[type="submit"] {
 /* Full-screen adjustments */
 @media (min-width: 600px) {
     #bus-times li.bus-item {
-        padding: 10px;
+        padding: 10px 10px 10px 0;
     }
 
     .route-number {

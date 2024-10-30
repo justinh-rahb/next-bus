@@ -121,7 +121,12 @@
         
                 // Add form submit handler
                 document.querySelector('form').addEventListener('submit', function(event) {
-                    const stopId = stopIdInput.value;
+                    let stopId = stopIdInput.value;
+                    // If no stop ID is set but the input is a number with 1 or more digits, use that as the stop ID
+                    if (!stopId && stopNameInput.value.match(/^\d{1,}$/)) {
+                        stopId = stopNameInput.value;
+                        stopIdInput.value = stopId;
+                    }
                     if (stopId) {
                         const newUrl = `${window.location.pathname}?stop_id=${stopId}`;
                         window.history.pushState({ stopId: stopId }, '', newUrl);

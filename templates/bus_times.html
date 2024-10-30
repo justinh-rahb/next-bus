@@ -4,8 +4,13 @@
     <h2>Upcoming Buses at {{ stop_name }}</h2>
     <ul>
         {% for bus in buses %}
-            <li>
-                <strong>Route {{ bus.route_name }}</strong> to {{ bus.trip_headsign }} arriving in {{ bus.countdown }} minutes (at {{ bus.arrival_time_formatted }})
+            <li class="bus-item">
+                <div class="route-number">{{ bus.route_name }}</div>
+                <div class="bus-details">
+                    <div class="bus-stop">{{ bus.trip_headsign }}</div>
+                    <div class="bus-countdown">Arriving in {{ bus.countdown }} minutes</div>
+                </div>
+                <div class="arrival-time">{{ bus.arrival_time_formatted }}</div>
             </li>
         {% endfor %}
     </ul>

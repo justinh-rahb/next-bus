@@ -125,12 +125,57 @@ header h1 {
     padding: 0;
 }
 
-#bus-times li {
+#bus-times li.bus-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     background-color: var(--list-item-background);
     margin: 5px 0;
     padding: 15px;
-    border-radius: 5px;
+    border-radius: 10px;
     font-size: 1.2em;
+}
+
+.route-number {
+    font-size: 1.5em;
+    font-weight: bold;
+    border: 2px solid var(--text-color);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.bus-details {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    margin-left: 10px;
+}
+
+.bus-stop {
+    font-size: 1.2em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bus-countdown {
+    font-size: 0.9em;
+    color: #888;
+}
+
+.arrival-time {
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: right;
+    flex-shrink: 0;
+    align-self: center;
 }
 
 .error {
@@ -149,7 +194,6 @@ h2 {
 }
 
 .awesomplete {
-    /* width: 100%; */
     flex: 1;
     gap: 0;
 }
@@ -174,14 +218,12 @@ h2 {
 }
 
 input[type="text"] {
-    border-right: none; /* Remove right border if there is one */
-    /* Make sure there's no padding on the right side */
+    border-right: none;
     padding-right: 0;
 }
 
 button[type="submit"] {
-    border-left: none; /* Remove left border if there is one */
-    /* Make sure there's no margin on the left side */
+    border-left: none;
     margin-left: 0;
 }
 
@@ -198,7 +240,6 @@ button[type="submit"] {
     color: white;
 }
 
-/* Override Awesomplete's default mark styling */
 .awesomplete mark {
     background: #FFC107;
     color: black;
@@ -231,7 +272,7 @@ button[type="submit"] {
 
     .github-link {
         font-size: 1.2em;
-        color: var(--text-color) !important; /* Force color override */
+        color: var(--text-color) !important;
         height: 35px;
     }
 
@@ -253,13 +294,27 @@ button[type="submit"] {
         font-size: 1.2em;
     }
 
-    #bus-times li {
-        font-size: 1em;
+    #bus-times li.bus-item {
         padding: 12px;
+        font-size: 1em;
     }
 
-    .awesomplete > ul > li {
+    .route-number {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2em;
         padding: 8px;
-        font-size: 16px;
+    }
+
+    .bus-stop {
+        font-size: 1em;
+    }
+
+    .bus-countdown {
+        font-size: 0.8em;
+    }
+
+    .arrival-time {
+        font-size: 1em;
     }
 }

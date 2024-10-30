@@ -127,7 +127,7 @@ def get_next_bus():
 
     try:
         # Fetch GTFS Realtime data with timeout and SSL error handling
-        response = requests.get(GTFS_REALTIME_URL, timeout=10)
+        response = requests.get(GTFS_REALTIME_URL, timeout=15)
         response.raise_for_status()
     except Exception as e:
         print(f"An error occurred while fetching realtime data: {e}")

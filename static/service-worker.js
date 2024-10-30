@@ -3,6 +3,7 @@ const urlsToCache = [
   '/',
   '/static/styles.css',
   '/static/manifest.json',
+  '/static/icons/hsr-logo.png',
   '/static/icons/icon-192x192.png',
   '/static/icons/icon-512x512.png',
   // Add other assets as needed

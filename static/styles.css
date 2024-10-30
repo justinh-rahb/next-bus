@@ -259,7 +259,7 @@ button[type="submit"] {
 /* Full-screen adjustments */
 @media (min-width: 600px) {
     #bus-times li.bus-item {
-        padding: 10px 10px 10px 0;
+        padding: 10px 20px 10px 10px;
     }
 
     .route-number {

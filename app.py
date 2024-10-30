@@ -56,8 +56,14 @@ GTFS_STATIC_URL = os.environ.get('GTFS_STATIC_URL', 'https://opendata.hamilton.c
 # Local timezone of transit agency
 gtfs_timezone = pytz.timezone(os.getenv('TZ', 'America/Toronto'))
 
+# Agency name environment variable
+agency_name = os.environ.get('AGENCY_NAME')
+
+# Agency Logo URL environment variable
+logo_url = os.environ.get('AGENCY_LOGO_URL')
+
 # JSON Mode Flag
-JSON_MODE = os.environ.get('JSON_MODE', 'false').lower() == 'true'
+json_mode = os.environ.get('JSON_MODE', 'false').lower() == 'true'
 
 # Download and parse GTFS static data
 def download_and_extract_gtfs_static():
@@ -106,21 +112,24 @@ trips = load_trips(gtfs_zip)
 @app.route('/')
 def index():
     stop_id = request.args.get('stop_id')
-    return render_template('index.html', stop_id=stop_id)
+    return render_template('index.html',
+                        stop_id=stop_id,
+                        agency_name=agency_name,
+                        logo_url=logo_url)
 
 @app.route('/next-bus', methods=['GET'])
 def get_next_bus():
     stop_id = request.args.get('stop_id')
     if not stop_id:
         error_message = 'No stop selected'
-        if JSON_MODE:
+        if json_mode:
             return jsonify({'error': error_message}), 400
         else:
             return render_template('bus_times.html', error=error_message)
 
     if stop_id not in stops_dict:
         error_message = 'Invalid stop ID'
-        if JSON_MODE:
+        if json_mode:
             return jsonify({'error': error_message}), 400
         else:
             return render_template('bus_times.html', error=error_message)
@@ -131,7 +140,7 @@ def get_next_bus():
         response.raise_for_status()
     except Exception as e:
         print(f"An error occurred while fetching realtime data: {e}")
-        if JSON_MODE:
+        if json_mode:
             return jsonify({'error': 'Failed to fetch realtime data'}), 500
         else:
             # Return the same template without replacing the content
@@ -143,7 +152,7 @@ def get_next_bus():
         feed.ParseFromString(response.content)
     except Exception as e:
         print(f"Error parsing GTFS Realtime data: {e}")
-        if JSON_MODE:
+        if json_mode:
             return jsonify({'error': 'Failed to parse realtime data'}), 500
         else:
             return '', 204
@@ -174,7 +183,7 @@ def get_next_bus():
 
     if not next_buses:
         error_message = 'No upcoming buses found for this stop.'
-        if JSON_MODE:
+        if json_mode:
             return jsonify({'error': error_message, 'stop_id': stop_id}), 200
         else:
             return render_template('bus_times.html', error=error_message, stop_id=stop_id)
@@ -196,14 +205,19 @@ def get_next_bus():
         # Convert arrival_time to ISO format for JSON serialization
         bus['arrival_time'] = bus['arrival_time'].isoformat()
 
-    if JSON_MODE:
+    if json_mode:
         return jsonify({
             'buses': next_buses,
             'stop_name': stop_name,
             'stop_id': stop_id
         })
     else:
-        return render_template('bus_times.html', buses=next_buses, stop_name=stop_name, stop_id=stop_id)
+        return render_template('bus_times.html',
+                            buses=next_buses,
+                            stop_name=stop_name,
+                            stop_id=stop_id,
+                            agency_name=agency_name,
+                            logo_url=logo_url)
 
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():

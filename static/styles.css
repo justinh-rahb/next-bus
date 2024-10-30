@@ -13,7 +13,7 @@
 
 body {
     font-family: 'Roboto', sans-serif;
-    font-size: 1.5em;
+    font-size: 1.2em; /* Reduced base font size */
     margin: 0;
     padding: 20px;
     background-color: var(--background-color);
@@ -50,7 +50,7 @@ header h1 {
 }
 
 .logo {
-    height: 50px; /* Adjust size as needed */
+    height: 50px;
     width: auto;
     margin: 1rem;
 }
@@ -72,7 +72,7 @@ header h1 {
     flex: 1;
     width: calc(100% - 60px);
     padding: 15px;
-    font-size: 1.5em;
+    font-size: 1.2em;
     border: 2px solid #ccc;
     border-radius: 5px;
     color: var(--text-color);
@@ -84,11 +84,10 @@ header h1 {
     border: 2px solid #ccc;
     border-radius: 5px;
     cursor: pointer;
-    padding: 15px;
     color: var(--text-color);
-    font-size: 1.5em;
-    height: 76px;
-    width: 76px;
+    font-size: 1.2em;
+    height: 61px;
+    width: 61px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -125,12 +124,61 @@ header h1 {
     padding: 0;
 }
 
-#bus-times li {
+#bus-times li.bus-item {
+    display: flex;
+    align-items: center;
     background-color: var(--list-item-background);
     margin: 5px 0;
-    padding: 15px;
-    border-radius: 5px;
-    font-size: 1.2em;
+    padding: 10px; /* Reduced padding for better compactness */
+    border-radius: 10px;
+    font-size: 1em; /* Reduced font size */
+    justify-content: space-between;
+}
+
+.route-number {
+    font-size: 1em; /* Adjusted font size */
+    font-weight: bold;
+    border: 2px solid var(--text-color);
+    border-radius: 8px;
+    padding: 0; /* Removed extra padding */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.bus-details {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    margin-left: 10px; /* Adjusted for spacing */
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.bus-stop {
+    font-size: 1.1em; /* Slightly reduced */
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.bus-countdown {
+    font-size: 0.85em; /* Slightly reduced */
+    color: #888;
+}
+
+.arrival-time {
+    font-size: 1em; /* Adjusted to match */
+    font-weight: bold;
+    text-align: right;
+    flex-shrink: 0;
+    padding-left: 15px; /* Reduced padding for compact look */
+    align-self: center;
+    min-width: 80px;
 }
 
 .error {
@@ -140,6 +188,7 @@ header h1 {
 
 h2 {
     text-align: center;
+    font-size: 1.3em; /* Adjusted for smaller base font size */
 }
 
 /* Autocomplete styles */
@@ -149,7 +198,6 @@ h2 {
 }
 
 .awesomplete {
-    /* width: 100%; */
     flex: 1;
     gap: 0;
 }
@@ -174,14 +222,12 @@ h2 {
 }
 
 input[type="text"] {
-    border-right: none; /* Remove right border if there is one */
-    /* Make sure there's no padding on the right side */
+    border-right: none;
     padding-right: 0;
 }
 
 button[type="submit"] {
-    border-left: none; /* Remove left border if there is one */
-    /* Make sure there's no margin on the left side */
+    border-left: none;
     margin-left: 0;
 }
 
@@ -198,7 +244,6 @@ button[type="submit"] {
     color: white;
 }
 
-/* Override Awesomplete's default mark styling */
 .awesomplete mark {
     background: #FFC107;
     color: black;
@@ -211,11 +256,40 @@ button[type="submit"] {
     color: black;
 }
 
+/* Full-screen adjustments */
+@media (min-width: 600px) {
+    #bus-times li.bus-item {
+        padding: 10px 20px 10px 10px;
+    }
+
+    .route-number {
+        width: 50px;
+        height: 50px;
+    }
+
+    .bus-details {
+        margin-left: 10px;
+    }
+
+    .bus-stop {
+        font-size: 1em;
+    }
+
+    .bus-countdown {
+        font-size: 0.85em;
+    }
+
+    .arrival-time {
+        font-size: 1em;
+        padding-left: 15px;
+    }
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 600px) {
     body {
         padding: 10px;
-        font-size: 16px;
+        font-size: 1em;
     }
 
     header {
@@ -231,7 +305,7 @@ button[type="submit"] {
 
     .github-link {
         font-size: 1.2em;
-        color: var(--text-color) !important; /* Force color override */
+        color: var(--text-color) !important;
         height: 35px;
     }
 
@@ -253,13 +327,28 @@ button[type="submit"] {
         font-size: 1.2em;
     }
 
-    #bus-times li {
-        font-size: 1em;
+    #bus-times li.bus-item {
         padding: 12px;
+        font-size: 1em;
     }
 
-    .awesomplete > ul > li {
+    .route-number {
+        width: 40px;
+        height: 40px;
+        font-size: 1em;
         padding: 8px;
-        font-size: 16px;
+    }
+
+    .bus-stop {
+        font-size: 0.9em;
+    }
+
+    .bus-countdown {
+        font-size: 0.8em;
+    }
+
+    .arrival-time {
+        font-size: 1em;
+        padding-left: 10px;
     }
 }

@@ -13,7 +13,7 @@
 
 body {
     font-family: 'Roboto', sans-serif;
-    font-size: 1.15em; /* Reduced base font size */
+    font-size: 1.1em; /* Reduced base font size */
     margin: 0;
     padding: 20px;
     background-color: var(--background-color);
@@ -136,7 +136,7 @@ header h1 {
 }
 
 .route-number {
-    font-size: 1em; /* Adjusted font size */
+    font-size: 1.2em; /* Adjusted font size */
     font-weight: bold;
     border: 2px solid var(--text-color);
     border-radius: 8px;
@@ -289,7 +289,7 @@ button[type="submit"] {
 @media (max-width: 600px) {
     body {
         padding: 10px;
-        font-size: 1.15em;
+        font-size: 1.2em;
     }
 
     header {
@@ -335,7 +335,7 @@ button[type="submit"] {
     .route-number {
         width: 40px;
         height: 40px;
-        font-size: 1.25em;
+        font-size: 1.2em;
         padding: 8px;
     }
 

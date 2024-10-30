@@ -1,13 +1,13 @@
 /* Variables for themes */
 :root {
     --background-color: #ffffff;
-    --text-color: #000000;
+    --text-color: #444444;
     --list-item-background: #f8f9fa;
 }
 
 :root[data-theme='dark'] {
-    --background-color: #121212;
-    --text-color: #ffffff;
+    --background-color: #000000;
+    --text-color: #dddddd;
     --list-item-background: #1e1e1e;
 }
 
@@ -289,7 +289,7 @@ button[type="submit"] {
 @media (max-width: 600px) {
     body {
         padding: 10px;
-        font-size: 1em;
+        font-size: 1.3em;
     }
 
     header {

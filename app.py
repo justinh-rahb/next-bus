@@ -271,7 +271,7 @@ def get_next_bus():
     # Sort live buses by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])
     last_live_arrival = next_buses[-1]['arrival_time'] if next_buses else current_time
-    eight_hours_from_now = current_time + timedelta(hours=8)
+    eight_hours_from_now = current_time + timedelta(hours=4)
 
     # Load additional scheduled buses if fewer than 5 trips are available
     if len(next_buses) < 5:

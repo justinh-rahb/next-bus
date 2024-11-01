@@ -44,8 +44,6 @@ import requests
 from requests.exceptions import RequestException, SSLError, ConnectionError, Timeout
 from flask import Flask, request, render_template, jsonify, send_from_directory
 from google.transit import gtfs_realtime_pb2
-from functools import wraps
-import threading
 
 logging.basicConfig(level=logging.INFO)
 
@@ -55,67 +53,27 @@ app = Flask(__name__)
 GTFS_REALTIME_URL = os.environ.get('GTFS_REALTIME_URL', 'https://opendata.hamilton.ca/GTFS-RT/GTFS_TripUpdates.pb')
 GTFS_STATIC_URL = os.environ.get('GTFS_STATIC_URL', 'https://opendata.hamilton.ca/GTFS-Static/Fall2024_GTFSstatic.zip')
 
-# Cache configuration
-CACHE_DURATION = int(os.environ.get('CACHE_DURATION_HOURS', 24)) * 3600  # Convert hours to seconds
-static_data_cache = {
-    'last_update': None,
-    'stops': [],
-    'stops_dict': {},
-    'routes': {},
-    'stop_times': [],
-    'trips': {},
-    'lock': threading.Lock()
-}
+# Local timezone of transit agency
+gtfs_timezone = pytz.timezone(os.getenv('TZ', 'America/Toronto'))
 
-def cache_static_data():
-    """Cache decorator for static data loading functions"""
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            current_time = time.time()
-            
-            # Check if cache needs refresh
-            with static_data_cache['lock']:
-                if (static_data_cache['last_update'] is None or 
-                    current_time - static_data_cache['last_update'] > CACHE_DURATION):
-                    try:
-                        logging.info("Refreshing GTFS static data cache...")
-                        gtfs_zip = download_and_extract_gtfs_static()
-                        
-                        # Update all static data atomically
-                        static_data_cache['stops'] = load_stops(gtfs_zip)
-                        static_data_cache['stops_dict'] = {
-                            stop['stop_id']: stop['stop_name'] 
-                            for stop in static_data_cache['stops']
-                        }
-                        static_data_cache['routes'] = load_routes(gtfs_zip)
-                        static_data_cache['stop_times'] = load_static_schedule(gtfs_zip)
-                        static_data_cache['trips'] = load_trips(gtfs_zip)
-                        static_data_cache['last_update'] = current_time
-                        
-                        logging.info("GTFS static data cache refreshed successfully")
-                    except Exception as e:
-                        logging.error(f"Error refreshing cache: {e}")
-                        # If cache is empty, raise the error
-                        if static_data_cache['last_update'] is None:
-                            raise
-                        # Otherwise, continue using old cache
-                        logging.info("Continuing with existing cache data")
-            
-            # Return cached data
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
+# Agency name environment variable
+agency_name = os.environ.get('AGENCY_NAME')
+
+# Agency Logo URL environment variable
+logo_url = os.environ.get('AGENCY_LOGO_URL')
+
+# JSON Mode Flag
+json_mode = os.environ.get('JSON_MODE', 'false').lower() == 'true'
 
 # Download and parse GTFS static data
 def download_and_extract_gtfs_static():
-    try:
-        response = requests.get(GTFS_STATIC_URL, timeout=30)
-        response.raise_for_status()
-        return zipfile.ZipFile(io.BytesIO(response.content))
-    except Exception as e:
-        logging.error(f"Error downloading GTFS static data: {e}")
-        raise
+    response = requests.get(GTFS_STATIC_URL)
+    if response.status_code != 200:
+        raise Exception(f'Failed to download GTFS static data: {response.status_code}')
+
+    # Create an in-memory file
+    gtfs_zip = zipfile.ZipFile(io.BytesIO(response.content))
+    return gtfs_zip
 
 # Load stop data
 def load_stops(gtfs_zip):
@@ -224,7 +182,6 @@ stop_times = load_static_schedule(gtfs_zip)
 trips = load_trips(gtfs_zip)
 
 @app.route('/')
-@cache_static_data()
 def index():
     stop_id = request.args.get('stop_id')
     return render_template('index.html',
@@ -233,7 +190,6 @@ def index():
                         logo_url=logo_url)
 
 @app.route('/next-bus', methods=['GET'])
-@cache_static_data()
 def get_next_bus():
     stop_id = request.args.get('stop_id')
     if not stop_id:
@@ -243,7 +199,7 @@ def get_next_bus():
         else:
             return render_template('bus_times.html', error=error_message)
 
-    if stop_id not in static_data_cache['stops_dict']:
+    if stop_id not in stops_dict:
         error_message = 'Invalid stop ID'
         if json_mode:
             return jsonify({'error': error_message}), 400
@@ -252,10 +208,10 @@ def get_next_bus():
 
     next_buses = []
     realtime_available = True
-    
+
     try:
         # Fetch GTFS Realtime data
-        response = requests.get(GTFS_REALTIME_URL, timeout=15)
+        response = requests.get(GTFS_REALTIME_URL, timeout=20)
         response.raise_for_status()
         
         # Parse the GTFS Realtime data
@@ -269,9 +225,9 @@ def get_next_bus():
                 trip_update = entity.trip_update
                 trip_id = trip_update.trip.trip_id
                 route_id = trip_update.trip.route_id
-                trip_info = static_data_cache['trips'].get(trip_id, {})
-                route_name = static_data_cache['routes'].get(route_id, route_id)
-                
+                trip_headsign = trips.get(trip_id, '')
+                route_name = routes.get(route_id, route_id)
+
                 for stop_time_update in trip_update.stop_time_update:
                     if stop_time_update.stop_id == stop_id:
                         arrival_time = datetime.fromtimestamp(
@@ -283,7 +239,7 @@ def get_next_bus():
                                 'arrival_time': arrival_time,
                                 'route_id': route_id,
                                 'route_name': route_name,
-                                'trip_headsign': trip_info.get('headsign', ''),
+                                'trip_headsign': trip_headsign,
                                 'is_realtime': True
                             })
                             
@@ -294,13 +250,7 @@ def get_next_bus():
     # If no realtime data or realtime fetch failed, get static times
     if not next_buses or not realtime_available:
         current_time = datetime.now(gtfs_timezone)
-        static_buses = get_static_times(
-            stop_id, 
-            current_time,
-            static_data_cache['stop_times'],
-            static_data_cache['routes'],
-            static_data_cache['trips']
-        )
+        static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
         next_buses.extend(static_buses)
 
     if not next_buses:
@@ -328,7 +278,8 @@ def get_next_bus():
 
     # Limit to next 5 buses after deduplication
     next_buses = deduplicated_buses[:5]
-    stop_name = static_data_cache['stops_dict'][stop_id]
+
+    stop_name = stops_dict[stop_id]
     now = datetime.now(gtfs_timezone)
 
     # Calculate countdown and format times

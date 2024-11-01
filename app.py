@@ -281,22 +281,19 @@ def get_next_bus():
 
     next_buses = deduplicated_buses
 
-    # Add scheduled buses if fewer than 5 trips
-    if len(next_buses) < 5 and realtime_available:
+    # Load additional scheduled buses if fewer than 5 trips are available
+    if len(next_buses) < 5:
         current_time = datetime.now(gtfs_timezone)
         static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
-
-        # Only add scheduled buses that come after the latest live arrival time
-        last_live_arrival = next_buses[-1]['arrival_time'] if next_buses else current_time
-
+        
+        # Only add scheduled trips that fill up to 5 slots in total, in chronological order
         for bus in static_buses:
-            if bus['arrival_time'] > last_live_arrival:
-                bus_key = (bus['route_name'], bus['trip_headsign'], bus['arrival_time'].strftime('%H:%M'))
-                if bus_key not in seen:
-                    seen.add(bus_key)
-                    next_buses.append(bus)
-                    if len(next_buses) == 5:  # Stop once we have 5 trips
-                        break
+            bus_key = (bus['route_name'], bus['trip_headsign'], bus['arrival_time'].strftime('%H:%M'))
+            if bus_key not in seen:
+                seen.add(bus_key)
+                next_buses.append(bus)
+                if len(next_buses) == 5:
+                    break
 
     next_buses = next_buses[:5]  # Ensure only the next 5 are displayed
     stop_name = stops_dict[stop_id]

@@ -268,8 +268,21 @@ def get_next_bus():
         logging.error(f"Error fetching realtime data: {e}")
         realtime_available = False
 
-    # Sort and deduplicate live buses by route, destination, and arrival time
+    # Load scheduled buses if fewer than 5 trips are available
+    if len(next_buses) < 5:
+        current_time = datetime.now(gtfs_timezone)
+        static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
+        
+        # Only add enough scheduled trips to fill up to 5 slots in total
+        for bus in static_buses:
+            next_buses.append(bus)
+            if len(next_buses) == 5:
+                break
+
+    # Sort the list of all buses (live and scheduled) by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])
+
+    # Deduplicate the sorted list
     deduplicated_buses = []
     seen = set()
 
@@ -279,23 +292,8 @@ def get_next_bus():
             seen.add(bus_key)
             deduplicated_buses.append(bus)
 
-    next_buses = deduplicated_buses
-
-    # Load additional scheduled buses if fewer than 5 trips are available
-    if len(next_buses) < 5:
-        current_time = datetime.now(gtfs_timezone)
-        static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
-        
-        # Only add scheduled trips that fill up to 5 slots in total, in chronological order
-        for bus in static_buses:
-            bus_key = (bus['route_name'], bus['trip_headsign'], bus['arrival_time'].strftime('%H:%M'))
-            if bus_key not in seen:
-                seen.add(bus_key)
-                next_buses.append(bus)
-                if len(next_buses) == 5:
-                    break
-
-    next_buses = next_buses[:5]  # Ensure only the next 5 are displayed
+    # Limit to next 5 buses after deduplication
+    next_buses = deduplicated_buses[:5]
     stop_name = stops_dict[stop_id]
     now = datetime.now(gtfs_timezone)
 

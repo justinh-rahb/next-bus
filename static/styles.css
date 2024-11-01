@@ -202,7 +202,6 @@ header h1 {
     height: 50px;
     flex-shrink: 0;
     text-align: center;
-    margin-right: 10px; /* Added to give space for status indicator */
 }
 
 .bus-details {
@@ -212,7 +211,6 @@ header h1 {
     margin-left: 10px; /* Adjusted for spacing */
     overflow: hidden;
     white-space: nowrap;
-    padding-right: 10px; /* Added to prevent text overlap with status indicator */
 }
 
 .bus-stop {
@@ -407,10 +405,6 @@ button[type="submit"] {
         height: 40px;
         font-size: 1.2em;
         padding: 8px;
-    }
-
-    .bus-details {
-        padding-right: 8px;
     }
 
     .bus-stop {

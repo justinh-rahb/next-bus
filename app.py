@@ -241,6 +241,7 @@ def get_next_bus():
 
         current_time = datetime.now(gtfs_timezone)
 
+        # Process realtime data
         for entity in feed.entity:
             if entity.HasField('trip_update'):
                 trip_update = entity.trip_update
@@ -270,28 +271,19 @@ def get_next_bus():
 
     # Sort live buses by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])
+    last_live_arrival = next_buses[-1]['arrival_time'] if next_buses else current_time
     four_hours_from_now = current_time + timedelta(hours=4)
 
     # Gather scheduled buses
     if len(next_buses) < 5:
         static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
-        
-        # Add scheduled buses to fill in gaps, ensuring no duplicates and respecting the 4-hour limit
-        seen = {(bus['route_name'], bus['trip_headsign'], bus['arrival_time'].strftime('%H:%M')) for bus in next_buses}
+
+        # Only add scheduled buses that are after the last live bus and within 4 hours
         for bus in static_buses:
-            if bus['arrival_time'] <= four_hours_from_now:
-                # Check if the bus fills a gap or is the next in sequence
-                if (
-                    not next_buses or
-                    bus['arrival_time'] > next_buses[-1]['arrival_time'] or
-                    (bus['arrival_time'] - next_buses[-1]['arrival_time']).total_seconds() / 3600 == 1  # hourly gap
-                ):
-                    bus_key = (bus['route_name'], bus['trip_headsign'], bus['arrival_time'].strftime('%H:%M'))
-                    if bus_key not in seen:
-                        seen.add(bus_key)
-                        next_buses.append(bus)
-                        if len(next_buses) == 5:
-                            break
+            if last_live_arrival <= bus['arrival_time'] <= four_hours_from_now:
+                next_buses.append(bus)
+                if len(next_buses) == 5:
+                    break
 
     # Sort the list of all buses (live and scheduled) by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])

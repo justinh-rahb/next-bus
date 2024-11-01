@@ -288,8 +288,8 @@ def get_next_bus():
 
     for bus in next_buses:
         bus_key = (
-            bus['route_name'],
-            bus['trip_headsign'],
+            str(bus['route_name']),
+            str(bus['trip_headsign']),
             bus['arrival_time'].strftime('%H:%M')
         )
 

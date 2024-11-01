@@ -269,13 +269,12 @@ def get_next_bus():
                                 })
             break  # Exit retry loop if successful
 
-        except Exception as e:
-            logging.error(f"Attempt {attempt + 1} failed: {e}")
+        except Exception:
             attempt += 1
             time.sleep(5)  # Wait before retrying
 
         if attempt == max_retries:
-            logging.error("Max retries reached. Failing to fetch real-time data.")
+            logging.error("Failed to fetch real-time data after 3 attempts.")
             realtime_available = False
 
     # Sort live buses by arrival time

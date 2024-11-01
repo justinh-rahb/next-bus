@@ -270,7 +270,7 @@ def get_next_bus():
 
     # Sort live buses by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])
-    last_live_arrival = next_buses[-1]['arrival_time'] if next_buses else current_time
+    # last_live_arrival = next_buses[-1]['arrival_time'] if next_buses else current_time
     four_hours_from_now = current_time + timedelta(hours=4)
 
     # Gather scheduled buses
@@ -279,7 +279,8 @@ def get_next_bus():
 
         # Only add scheduled buses that are after the last live bus and within 4 hours
         for bus in static_buses:
-            if last_live_arrival <= bus['arrival_time'] <= four_hours_from_now:
+            # if last_live_arrival <= bus['arrival_time'] <= four_hours_from_now:
+            if bus['arrival_time'] <= four_hours_from_now:
                 next_buses.append(bus)
                 if len(next_buses) == 5:
                     break

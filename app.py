@@ -268,38 +268,37 @@ def get_next_bus():
         logging.error(f"Error fetching realtime data: {e}")
         realtime_available = False
 
-    # If no realtime data or realtime fetch failed, get static times
-    if not next_buses or not realtime_available:
-        current_time = datetime.now(gtfs_timezone)
-        static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
-        next_buses.extend(static_buses)
-
-    if not next_buses:
-        error_message = 'No upcoming buses found for this stop.'
-        if json_mode:
-            return jsonify({'error': error_message, 'stop_id': stop_id}), 200
-        else:
-            return render_template('bus_times.html', error=error_message, stop_id=stop_id)
-
-    # Sort and deduplicate buses by route, destination, and arrival time
+    # Sort and deduplicate live buses by route, destination, and arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])
     deduplicated_buses = []
     seen = set()
 
     for bus in next_buses:
-        bus_key = (
-            str(bus['route_name']),
-            str(bus['trip_headsign']),
-            bus['arrival_time'].strftime('%H:%M')
-        )
-
+        bus_key = (bus['route_name'], bus['trip_headsign'], bus['arrival_time'].strftime('%H:%M'))
         if bus_key not in seen:
             seen.add(bus_key)
             deduplicated_buses.append(bus)
 
-    # Limit to next 5 buses after deduplication
-    next_buses = deduplicated_buses[:5]
+    next_buses = deduplicated_buses
 
+    # Add scheduled buses if fewer than 5 trips
+    if len(next_buses) < 5 and realtime_available:
+        current_time = datetime.now(gtfs_timezone)
+        static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
+
+        # Only add scheduled buses that come after the latest live arrival time
+        last_live_arrival = next_buses[-1]['arrival_time'] if next_buses else current_time
+
+        for bus in static_buses:
+            if bus['arrival_time'] > last_live_arrival:
+                bus_key = (bus['route_name'], bus['trip_headsign'], bus['arrival_time'].strftime('%H:%M'))
+                if bus_key not in seen:
+                    seen.add(bus_key)
+                    next_buses.append(bus)
+                    if len(next_buses) == 5:  # Stop once we have 5 trips
+                        break
+
+    next_buses = next_buses[:5]  # Ensure only the next 5 are displayed
     stop_name = stops_dict[stop_id]
     now = datetime.now(gtfs_timezone)
 

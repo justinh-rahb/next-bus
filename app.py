@@ -133,17 +133,21 @@ def parse_static_time(time_str, base_date):
         second=dt.second
     ) + timedelta(days=extra_days)
 
-def format_countdown(minutes):
+def format_countdown(minutes, is_realtime):
+    prefix = "Arriving" if is_realtime else "Scheduled"
+    
     if minutes == 0:
-        return "Arriving right now"
+        return f"{prefix} now"
     elif minutes == 1:
-        return "Arriving in 1 minute"
+        return f"{prefix} in 1 minute"
     elif minutes >= 60:
         hours = minutes // 60
         remaining_minutes = minutes % 60
-        return f"Arriving in {hours} hr {remaining_minutes} min"
+        if remaining_minutes == 0:
+            return f"{prefix} in {hours} hr{'s' if hours > 1 else ''}"
+        return f"{prefix} in {hours} hr{'s' if hours > 1 else ''} {remaining_minutes} min"
     else:
-        return f"Arriving in {minutes} minutes"
+        return f"{prefix} in {minutes} minutes"
 
 def get_static_times(stop_id, current_time, stop_times, routes, trips):
     static_buses = []
@@ -267,8 +271,7 @@ def get_next_bus():
     for bus in next_buses:
         countdown = int((bus['arrival_time'] - now).total_seconds() / 60)
         bus['countdown'] = max(countdown, 0)
-        bus['countdown_text'] = format_countdown(bus['countdown'])
-        bus['arrival_type'] = 'Arriving in' if bus['is_realtime'] else 'Scheduled in'
+        bus['countdown_text'] = format_countdown(bus['countdown'], bus['is_realtime'])
         bus['arrival_time_formatted'] = bus['arrival_time'].strftime('%I:%M %p')
         bus['arrival_time'] = bus['arrival_time'].isoformat()
 

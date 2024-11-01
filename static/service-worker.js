@@ -1,6 +1,7 @@
 const CACHE_NAME = 'next-bus-time-cache-v1';
 const urlsToCache = [
   '/',
+  '/static/next-bus.js',
   '/static/styles.css',
   '/static/manifest.json',
   '/static/icons/hsr-logo.png',

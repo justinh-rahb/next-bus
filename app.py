@@ -65,15 +65,36 @@ logo_url = os.environ.get('AGENCY_LOGO_URL')
 # JSON Mode Flag
 json_mode = os.environ.get('JSON_MODE', 'false').lower() == 'true'
 
+# Cache settings
+CACHE_FILE = 'gtfs_static_cache.zip'
+CACHE_DURATION = timedelta(days=1)  # Cache duration
+
 # Download and parse GTFS static data
 def download_and_extract_gtfs_static():
+    logging.info("Downloading GTFS static data...")
     response = requests.get(GTFS_STATIC_URL)
     if response.status_code != 200:
         raise Exception(f'Failed to download GTFS static data: {response.status_code}')
+    with open(CACHE_FILE, 'wb') as f:
+        f.write(response.content)
+    return zipfile.ZipFile(io.BytesIO(response.content))
 
-    # Create an in-memory file
-    gtfs_zip = zipfile.ZipFile(io.BytesIO(response.content))
-    return gtfs_zip
+# Check if the cache file exists and is recent enough
+def is_cache_valid():
+    if os.path.exists(CACHE_FILE):
+        cache_age = datetime.now() - datetime.fromtimestamp(os.path.getmtime(CACHE_FILE))
+        if cache_age <= CACHE_DURATION:
+            logging.info("Using cached GTFS static data")
+            return True
+    return False
+
+# Load GTFS static data from cache or download if necessary
+def load_gtfs_static():
+    if is_cache_valid():
+        with zipfile.ZipFile(CACHE_FILE, 'r') as gtfs_zip:
+            return gtfs_zip
+    else:
+        return download_and_extract_gtfs_static()
 
 # Load stop data
 def load_stops(gtfs_zip):
@@ -123,10 +144,10 @@ def parse_static_time(time_str, base_date):
     hours, minutes, seconds = map(int, time_str.split(':'))
     extra_days = hours // 24
     hours = hours % 24
-    
+
     time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
     dt = datetime.strptime(time_str, '%H:%M:%S')
-    
+
     return base_date.replace(
         hour=dt.hour,
         minute=dt.minute,
@@ -135,7 +156,7 @@ def parse_static_time(time_str, base_date):
 
 def format_countdown(minutes, is_realtime):
     prefix = "Arriving" if is_realtime else "Scheduled"
-    
+
     if minutes == 0:
         return f"{prefix} now"
     elif minutes == 1:
@@ -152,16 +173,16 @@ def format_countdown(minutes, is_realtime):
 def get_static_times(stop_id, current_time, stop_times, routes, trips):
     static_buses = []
     base_date = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
-    
+
     for stop_time in stop_times:
         if stop_time['stop_id'] == stop_id:
             trip_id = stop_time['trip_id']
             trip_info = trips.get(trip_id)
-            
+
             if trip_info:
                 route_id = trip_info['route_id']
                 arrival_time = parse_static_time(stop_time['arrival_time'], base_date)
-                
+
                 if arrival_time >= current_time:
                     static_buses.append({
                         'arrival_time': arrival_time,
@@ -170,11 +191,11 @@ def get_static_times(stop_id, current_time, stop_times, routes, trips):
                         'trip_headsign': trip_info['headsign'],
                         'is_realtime': False
                     })
-    
+
     return static_buses
 
 # Load all GTFS static data
-gtfs_zip = download_and_extract_gtfs_static()
+gtfs_zip = load_gtfs_static()
 stops = load_stops(gtfs_zip)
 stops_dict = {stop['stop_id']: stop['stop_name'] for stop in stops}
 routes = load_routes(gtfs_zip)
@@ -185,9 +206,9 @@ trips = load_trips(gtfs_zip)
 def index():
     stop_id = request.args.get('stop_id')
     return render_template('index.html',
-                        stop_id=stop_id,
-                        agency_name=agency_name,
-                        logo_url=logo_url)
+                           stop_id=stop_id,
+                           agency_name=agency_name,
+                           logo_url=logo_url)
 
 @app.route('/next-bus', methods=['GET'])
 def get_next_bus():
@@ -211,15 +232,15 @@ def get_next_bus():
 
     try:
         # Fetch GTFS Realtime data
-        response = requests.get(GTFS_REALTIME_URL, timeout=20)
+        response = requests.get(GTFS_REALTIME_URL, timeout=15)
         response.raise_for_status()
-        
+
         # Parse the GTFS Realtime data
         feed = gtfs_realtime_pb2.FeedMessage()
         feed.ParseFromString(response.content)
-        
+
         current_time = datetime.now(gtfs_timezone)
-        
+
         for entity in feed.entity:
             if entity.HasField('trip_update'):
                 trip_update = entity.trip_update
@@ -242,7 +263,7 @@ def get_next_bus():
                                 'trip_headsign': trip_headsign,
                                 'is_realtime': True
                             })
-                            
+
     except Exception as e:
         logging.error(f"Error fetching realtime data: {e}")
         realtime_available = False
@@ -264,14 +285,14 @@ def get_next_bus():
     next_buses.sort(key=lambda x: x['arrival_time'])
     deduplicated_buses = []
     seen = set()
-    
+
     for bus in next_buses:
         bus_key = (
             bus['route_name'],
             bus['trip_headsign'],
             bus['arrival_time'].strftime('%H:%M')
         )
-        
+
         if bus_key not in seen:
             seen.add(bus_key)
             deduplicated_buses.append(bus)
@@ -298,11 +319,11 @@ def get_next_bus():
         })
     else:
         return render_template('bus_times.html',
-                            buses=next_buses,
-                            stop_name=stop_name,
-                            stop_id=stop_id,
-                            agency_name=agency_name,
-                            logo_url=logo_url)
+                               buses=next_buses,
+                               stop_name=stop_name,
+                               stop_id=stop_id,
+                               agency_name=agency_name,
+                               logo_url=logo_url)
 
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():

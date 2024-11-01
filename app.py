@@ -231,42 +231,52 @@ def get_next_bus():
     next_buses = []
     realtime_available = True
 
-    try:
-        # Fetch GTFS Realtime data
-        response = requests.get(GTFS_REALTIME_URL, timeout=15)
-        response.raise_for_status()
+    # Retry logic for fetching GTFS Realtime data
+    max_retries = 3
+    attempt = 0
+    while attempt < max_retries:
+        try:
+            # Attempt to fetch GTFS Realtime data
+            response = requests.get(GTFS_REALTIME_URL, timeout=5)
+            response.raise_for_status()
 
-        # Parse the GTFS Realtime data
-        feed = gtfs_realtime_pb2.FeedMessage()
-        feed.ParseFromString(response.content)
+            # Parse the GTFS Realtime data
+            feed = gtfs_realtime_pb2.FeedMessage()
+            feed.ParseFromString(response.content)
 
-        # Process realtime data
-        for entity in feed.entity:
-            if entity.HasField('trip_update'):
-                trip_update = entity.trip_update
-                trip_id = trip_update.trip.trip_id
-                route_id = trip_update.trip.route_id
-                trip_headsign = trips.get(trip_id, {}).get('headsign', '')
-                route_name = routes.get(route_id, route_id)
+            # Process realtime data
+            for entity in feed.entity:
+                if entity.HasField('trip_update'):
+                    trip_update = entity.trip_update
+                    trip_id = trip_update.trip.trip_id
+                    route_id = trip_update.trip.route_id
+                    trip_headsign = trips.get(trip_id, {}).get('headsign', '')
+                    route_name = routes.get(route_id, route_id)
 
-                for stop_time_update in trip_update.stop_time_update:
-                    if stop_time_update.stop_id == stop_id:
-                        arrival_time = datetime.fromtimestamp(
-                            stop_time_update.arrival.time,
-                            gtfs_timezone
-                        )
-                        if arrival_time >= current_time:
-                            next_buses.append({
-                                'arrival_time': arrival_time,
-                                'route_id': route_id,
-                                'route_name': route_name,
-                                'trip_headsign': trip_headsign,
-                                'is_realtime': True
-                            })
+                    for stop_time_update in trip_update.stop_time_update:
+                        if stop_time_update.stop_id == stop_id:
+                            arrival_time = datetime.fromtimestamp(
+                                stop_time_update.arrival.time,
+                                gtfs_timezone
+                            )
+                            if arrival_time >= current_time:
+                                next_buses.append({
+                                    'arrival_time': arrival_time,
+                                    'route_id': route_id,
+                                    'route_name': route_name,
+                                    'trip_headsign': trip_headsign,
+                                    'is_realtime': True
+                                })
+            break  # Exit retry loop if successful
 
-    except Exception as e:
-        logging.error(f"Error fetching realtime data: {e}")
-        realtime_available = False
+        except Exception as e:
+            logging.error(f"Attempt {attempt + 1} failed: {e}")
+            attempt += 1
+            time.sleep(5)  # Wait before retrying
+
+        if attempt == max_retries:
+            logging.error("Max retries reached. Failing to fetch real-time data.")
+            realtime_available = False
 
     # Sort live buses by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])

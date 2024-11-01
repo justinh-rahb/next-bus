@@ -268,7 +268,7 @@ def get_next_bus():
         countdown = int((bus['arrival_time'] - now).total_seconds() / 60)
         bus['countdown'] = max(countdown, 0)
         bus['countdown_text'] = format_countdown(bus['countdown'])
-        bus['arrival_type'] = 'Arriving' if bus['is_realtime'] else 'Scheduled'
+        bus['arrival_type'] = 'Arriving in' if bus['is_realtime'] else 'Scheduled in'
         bus['arrival_time_formatted'] = bus['arrival_time'].strftime('%I:%M %p')
         bus['arrival_time'] = bus['arrival_time'].isoformat()
 

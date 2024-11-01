@@ -227,6 +227,7 @@ def get_next_bus():
         else:
             return render_template('bus_times.html', error=error_message)
 
+    current_time = datetime.now(gtfs_timezone)
     next_buses = []
     realtime_available = True
 
@@ -238,8 +239,6 @@ def get_next_bus():
         # Parse the GTFS Realtime data
         feed = gtfs_realtime_pb2.FeedMessage()
         feed.ParseFromString(response.content)
-
-        current_time = datetime.now(gtfs_timezone)
 
         # Process realtime data
         for entity in feed.entity:

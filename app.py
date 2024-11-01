@@ -270,21 +270,28 @@ def get_next_bus():
 
     # Sort live buses by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])
-    last_live_arrival = next_buses[-1]['arrival_time'] if next_buses else current_time
-    eight_hours_from_now = current_time + timedelta(hours=4)
+    four_hours_from_now = current_time + timedelta(hours=4)
 
-    # Load additional scheduled buses if fewer than 5 trips are available
+    # Gather scheduled buses
     if len(next_buses) < 5:
-        current_time = datetime.now(gtfs_timezone)
         static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
         
-        # Only add scheduled trips that meet our constraints
+        # Add scheduled buses to fill in gaps, ensuring no duplicates and respecting the 4-hour limit
+        seen = {(bus['route_name'], bus['trip_headsign'], bus['arrival_time'].strftime('%H:%M')) for bus in next_buses}
         for bus in static_buses:
-            # Exclude scheduled trips that are before the last live trip and beyond 8 hours from now
-            if bus['arrival_time'] > last_live_arrival and bus['arrival_time'] <= eight_hours_from_now:
-                next_buses.append(bus)
-                if len(next_buses) == 5:
-                    break
+            if bus['arrival_time'] <= four_hours_from_now:
+                # Check if the bus fills a gap or is the next in sequence
+                if (
+                    not next_buses or
+                    bus['arrival_time'] > next_buses[-1]['arrival_time'] or
+                    (bus['arrival_time'] - next_buses[-1]['arrival_time']).total_seconds() / 3600 == 1  # hourly gap
+                ):
+                    bus_key = (bus['route_name'], bus['trip_headsign'], bus['arrival_time'].strftime('%H:%M'))
+                    if bus_key not in seen:
+                        seen.add(bus_key)
+                        next_buses.append(bus)
+                        if len(next_buses) == 5:
+                            break
 
     # Sort the list of all buses (live and scheduled) by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])

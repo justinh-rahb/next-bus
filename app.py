@@ -99,7 +99,10 @@ def load_trips(gtfs_zip):
     with gtfs_zip.open('trips.txt') as trips_file:
         reader = csv.DictReader(io.TextIOWrapper(trips_file, encoding='utf-8'))
         for row in reader:
-            trips[row['trip_id']] = row['trip_headsign']
+            trips[row['trip_id']] = {
+                'route_id': row['route_id'],
+                'headsign': row['trip_headsign']
+            }
     return trips
 
 def load_static_schedule(gtfs_zip):
@@ -149,9 +152,10 @@ def get_static_times(stop_id, current_time, stop_times, routes, trips):
     for stop_time in stop_times:
         if stop_time['stop_id'] == stop_id:
             trip_id = stop_time['trip_id']
-            route_id = next((trip['route_id'] for trip in trips.values() if trip['trip_id'] == trip_id), None)
+            trip_info = trips.get(trip_id)
             
-            if route_id:
+            if trip_info:
+                route_id = trip_info['route_id']
                 arrival_time = parse_static_time(stop_time['arrival_time'], base_date)
                 
                 if arrival_time >= current_time:
@@ -159,7 +163,7 @@ def get_static_times(stop_id, current_time, stop_times, routes, trips):
                         'arrival_time': arrival_time,
                         'route_id': route_id,
                         'route_name': routes.get(route_id, route_id),
-                        'trip_headsign': trips.get(trip_id, {}).get('headsign', ''),
+                        'trip_headsign': trip_info['headsign'],
                         'is_realtime': False
                     })
     

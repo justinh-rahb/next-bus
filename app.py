@@ -34,7 +34,7 @@ Global Variables:
 
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import zipfile
 import io
 import csv
@@ -65,15 +65,36 @@ logo_url = os.environ.get('AGENCY_LOGO_URL')
 # JSON Mode Flag
 json_mode = os.environ.get('JSON_MODE', 'false').lower() == 'true'
 
+# Cache settings
+CACHE_FILE = 'gtfs_static_cache.zip'
+CACHE_DURATION = timedelta(days=1)  # Cache duration
+
 # Download and parse GTFS static data
 def download_and_extract_gtfs_static():
+    logging.info("Downloading GTFS static data...")
     response = requests.get(GTFS_STATIC_URL)
     if response.status_code != 200:
         raise Exception(f'Failed to download GTFS static data: {response.status_code}')
+    with open(CACHE_FILE, 'wb') as f:
+        f.write(response.content)
+    return zipfile.ZipFile(io.BytesIO(response.content))
 
-    # Create an in-memory file
-    gtfs_zip = zipfile.ZipFile(io.BytesIO(response.content))
-    return gtfs_zip
+# Check if the cache file exists and is recent enough
+def is_cache_valid():
+    if os.path.exists(CACHE_FILE):
+        cache_age = datetime.now() - datetime.fromtimestamp(os.path.getmtime(CACHE_FILE))
+        if cache_age <= CACHE_DURATION:
+            logging.info("Using cached GTFS static data")
+            return True
+    return False
+
+# Load GTFS static data from cache or download if necessary
+def load_gtfs_static():
+    if is_cache_valid():
+        with zipfile.ZipFile(CACHE_FILE, 'r') as gtfs_zip:
+            return gtfs_zip
+    else:
+        return download_and_extract_gtfs_static()
 
 # Load stop data
 def load_stops(gtfs_zip):
@@ -99,23 +120,95 @@ def load_trips(gtfs_zip):
     with gtfs_zip.open('trips.txt') as trips_file:
         reader = csv.DictReader(io.TextIOWrapper(trips_file, encoding='utf-8'))
         for row in reader:
-            trips[row['trip_id']] = row['trip_headsign']
+            trips[row['trip_id']] = {
+                'route_id': row['route_id'],
+                'headsign': row['trip_headsign']
+            }
     return trips
 
+def load_static_schedule(gtfs_zip):
+    # Load stop_times.txt
+    stop_times = []
+    with gtfs_zip.open('stop_times.txt') as stop_times_file:
+        reader = csv.DictReader(io.TextIOWrapper(stop_times_file, encoding='utf-8'))
+        for row in reader:
+            stop_times.append({
+                'trip_id': row['trip_id'],
+                'arrival_time': row['arrival_time'],
+                'stop_id': row['stop_id']
+            })
+    return stop_times
+
+def parse_static_time(time_str, base_date):
+    # Handle times past midnight (e.g., "25:30:00")
+    hours, minutes, seconds = map(int, time_str.split(':'))
+    extra_days = hours // 24
+    hours = hours % 24
+
+    time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    dt = datetime.strptime(time_str, '%H:%M:%S')
+
+    return base_date.replace(
+        hour=dt.hour,
+        minute=dt.minute,
+        second=dt.second
+    ) + timedelta(days=extra_days)
+
+def format_countdown(minutes, is_realtime):
+    prefix = "Arriving" if is_realtime else "Scheduled"
+
+    if minutes == 0:
+        return f"{prefix} now"
+    elif minutes == 1:
+        return f"{prefix} in 1 minute"
+    elif minutes >= 60:
+        hours = minutes // 60
+        remaining_minutes = minutes % 60
+        if remaining_minutes == 0:
+            return f"{prefix} in {hours} hr{'s' if hours > 1 else ''}"
+        return f"{prefix} in {hours} hr{'s' if hours > 1 else ''} {remaining_minutes} min"
+    else:
+        return f"{prefix} in {minutes} minutes"
+
+def get_static_times(stop_id, current_time, stop_times, routes, trips):
+    static_buses = []
+    base_date = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    for stop_time in stop_times:
+        if stop_time['stop_id'] == stop_id:
+            trip_id = stop_time['trip_id']
+            trip_info = trips.get(trip_id)
+
+            if trip_info:
+                route_id = trip_info['route_id']
+                arrival_time = parse_static_time(stop_time['arrival_time'], base_date)
+
+                if arrival_time >= current_time:
+                    static_buses.append({
+                        'arrival_time': arrival_time,
+                        'route_id': route_id,
+                        'route_name': routes.get(route_id, route_id),
+                        'trip_headsign': trip_info['headsign'],
+                        'is_realtime': False
+                    })
+
+    return static_buses
+
 # Load all GTFS static data
-gtfs_zip = download_and_extract_gtfs_static()
+gtfs_zip = load_gtfs_static()
 stops = load_stops(gtfs_zip)
 stops_dict = {stop['stop_id']: stop['stop_name'] for stop in stops}
 routes = load_routes(gtfs_zip)
+stop_times = load_static_schedule(gtfs_zip)
 trips = load_trips(gtfs_zip)
 
 @app.route('/')
 def index():
     stop_id = request.args.get('stop_id')
     return render_template('index.html',
-                        stop_id=stop_id,
-                        agency_name=agency_name,
-                        logo_url=logo_url)
+                           stop_id=stop_id,
+                           agency_name=agency_name,
+                           logo_url=logo_url)
 
 @app.route('/next-bus', methods=['GET'])
 def get_next_bus():
@@ -134,75 +227,84 @@ def get_next_bus():
         else:
             return render_template('bus_times.html', error=error_message)
 
-    try:
-        # Fetch GTFS Realtime data with timeout and SSL error handling
-        response = requests.get(GTFS_REALTIME_URL, timeout=15)
-        response.raise_for_status()
-    except Exception as e:
-        print(f"An error occurred while fetching realtime data: {e}")
-        if json_mode:
-            return jsonify({'error': 'Failed to fetch realtime data'}), 500
-        else:
-            # Return the same template without replacing the content
-            return '', 204
+    next_buses = []
+    realtime_available = True
 
     try:
+        # Fetch GTFS Realtime data
+        response = requests.get(GTFS_REALTIME_URL, timeout=15)
+        response.raise_for_status()
+
         # Parse the GTFS Realtime data
         feed = gtfs_realtime_pb2.FeedMessage()
         feed.ParseFromString(response.content)
+
+        current_time = datetime.now(gtfs_timezone)
+
+        for entity in feed.entity:
+            if entity.HasField('trip_update'):
+                trip_update = entity.trip_update
+                trip_id = trip_update.trip.trip_id
+                route_id = trip_update.trip.route_id
+                trip_headsign = trips.get(trip_id, {}).get('headsign', '')
+                route_name = routes.get(route_id, route_id)
+
+                for stop_time_update in trip_update.stop_time_update:
+                    if stop_time_update.stop_id == stop_id:
+                        arrival_time = datetime.fromtimestamp(
+                            stop_time_update.arrival.time,
+                            gtfs_timezone
+                        )
+                        if arrival_time >= current_time:
+                            next_buses.append({
+                                'arrival_time': arrival_time,
+                                'route_id': route_id,
+                                'route_name': route_name,
+                                'trip_headsign': trip_headsign,
+                                'is_realtime': True
+                            })
+
     except Exception as e:
-        print(f"Error parsing GTFS Realtime data: {e}")
-        if json_mode:
-            return jsonify({'error': 'Failed to parse realtime data'}), 500
-        else:
-            return '', 204
+        logging.error(f"Error fetching realtime data: {e}")
+        realtime_available = False
 
-    current_time = int(time.time())
-
-    next_buses = []
-    for entity in feed.entity:
-        if entity.HasField('trip_update'):
-            trip_update = entity.trip_update
-            trip_id = trip_update.trip.trip_id
-            route_id = trip_update.trip.route_id
-            trip_headsign = trips.get(trip_id, '')
-            route_name = routes.get(route_id, route_id)
-
-            for stop_time_update in trip_update.stop_time_update:
-                if stop_time_update.stop_id == stop_id:
-                    arrival_time = stop_time_update.arrival.time
-                    if arrival_time >= current_time:
-                        # Convert UNIX timestamp to local time
-                        local_arrival_time = datetime.fromtimestamp(arrival_time, gtfs_timezone)
-                        next_buses.append({
-                            'arrival_time': local_arrival_time,
-                            'route_id': route_id,
-                            'route_name': route_name,
-                            'trip_headsign': trip_headsign
-                        })
-
-    if not next_buses:
-        error_message = 'No upcoming buses found for this stop.'
-        if json_mode:
-            return jsonify({'error': error_message, 'stop_id': stop_id}), 200
-        else:
-            return render_template('bus_times.html', error=error_message, stop_id=stop_id)
-
-    # Sort buses by arrival time
+    # Sort live buses by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])
+    four_hours_from_now = current_time + timedelta(hours=4)
 
-    # Limit to next 5 buses
+    # Gather scheduled buses
+    if len(next_buses) < 5:
+        static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
+        
+        # Add scheduled buses to fill in gaps, ensuring no duplicates and respecting the 4-hour limit
+        seen = {(bus['route_name'], bus['trip_headsign'], bus['arrival_time'].strftime('%H:%M')) for bus in next_buses}
+        for bus in static_buses:
+            if bus['arrival_time'] <= four_hours_from_now:
+                # Check if the bus fills a gap or is the next in sequence
+                if (
+                    not next_buses or
+                    bus['arrival_time'] > next_buses[-1]['arrival_time'] or
+                    (bus['arrival_time'] - next_buses[-1]['arrival_time']).total_seconds() / 3600 == 1  # hourly gap
+                ):
+                    bus_key = (bus['route_name'], bus['trip_headsign'], bus['arrival_time'].strftime('%H:%M'))
+                    if bus_key not in seen:
+                        seen.add(bus_key)
+                        next_buses.append(bus)
+                        if len(next_buses) == 5:
+                            break
+
+    # Sort the list of all buses (live and scheduled) by arrival time
+    next_buses.sort(key=lambda x: x['arrival_time'])
     next_buses = next_buses[:5]
-
     stop_name = stops_dict[stop_id]
-
-    # Calculate countdown and format arrival time
     now = datetime.now(gtfs_timezone)
+
+    # Calculate countdown and format times
     for bus in next_buses:
         countdown = int((bus['arrival_time'] - now).total_seconds() / 60)
         bus['countdown'] = max(countdown, 0)
+        bus['countdown_text'] = format_countdown(bus['countdown'], bus['is_realtime'])
         bus['arrival_time_formatted'] = bus['arrival_time'].strftime('%I:%M %p')
-        # Convert arrival_time to ISO format for JSON serialization
         bus['arrival_time'] = bus['arrival_time'].isoformat()
 
     if json_mode:
@@ -213,11 +315,11 @@ def get_next_bus():
         })
     else:
         return render_template('bus_times.html',
-                            buses=next_buses,
-                            stop_name=stop_name,
-                            stop_id=stop_id,
-                            agency_name=agency_name,
-                            logo_url=logo_url)
+                               buses=next_buses,
+                               stop_name=stop_name,
+                               stop_id=stop_id,
+                               agency_name=agency_name,
+                               logo_url=logo_url)
 
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():

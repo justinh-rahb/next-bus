@@ -246,7 +246,7 @@ def get_next_bus():
                 trip_update = entity.trip_update
                 trip_id = trip_update.trip.trip_id
                 route_id = trip_update.trip.route_id
-                trip_headsign = trips.get(trip_id, '')
+                trip_headsign = trips.get(trip_id, {}).get('headsign', '')
                 route_name = routes.get(route_id, route_id)
 
                 for stop_time_update in trip_update.stop_time_update:

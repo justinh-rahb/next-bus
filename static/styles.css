@@ -3,12 +3,18 @@
     --background-color: #ffffff;
     --text-color: #444444;
     --list-item-background: #f8f9fa;
+    --realtime-indicator: #10b981;
+    --static-indicator: #ef4444;
+    --bus-countdown-color: #888;
 }
 
 :root[data-theme='dark'] {
     --background-color: #000000;
     --text-color: #dddddd;
     --list-item-background: #1e1e1e;
+    --realtime-indicator: #34d399;
+    --static-indicator: #f87171;
+    --bus-countdown-color: #9ca3af;
 }
 
 body {
@@ -125,6 +131,7 @@ header h1 {
 }
 
 #bus-times li.bus-item {
+    position: relative;
     display: flex;
     align-items: center;
     background-color: var(--list-item-background);
@@ -133,6 +140,53 @@ header h1 {
     border-radius: 10px;
     font-size: 1em; /* Reduced font size */
     justify-content: space-between;
+}
+
+.status-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.status-indicator:hover {
+    transform: scale(1.5);
+}
+
+.status-indicator::before {
+    content: attr(title);
+    position: absolute;
+    top: -30px;
+    right: -5px;
+    background: var(--background-color);
+    color: var(--text-color);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+}
+
+.status-indicator:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+.status-indicator.realtime {
+    background-color: var(--realtime-indicator);
+    box-shadow: 0 0 4px var(--realtime-indicator);
+}
+
+.status-indicator.static {
+    background-color: var(--static-indicator);
+    box-shadow: 0 0 4px var(--static-indicator);
 }
 
 .route-number {
@@ -148,6 +202,7 @@ header h1 {
     height: 50px;
     flex-shrink: 0;
     text-align: center;
+    margin-right: 15px; /* Added to give space for status indicator */
 }
 
 .bus-details {
@@ -157,6 +212,7 @@ header h1 {
     margin-left: 10px; /* Adjusted for spacing */
     overflow: hidden;
     white-space: nowrap;
+    padding-right: 15px; /* Added to prevent text overlap with status indicator */
 }
 
 .bus-stop {
@@ -168,7 +224,7 @@ header h1 {
 
 .bus-countdown {
     font-size: 0.85em; /* Slightly reduced */
-    color: #888;
+    color: var(--bus-countdown-color);
 }
 
 .arrival-time {
@@ -332,11 +388,29 @@ button[type="submit"] {
         font-size: 1em;
     }
 
+    .status-indicator {
+        width: 6px;
+        height: 6px;
+        top: 6px;
+        right: 6px;
+    }
+
+    .status-indicator::before {
+        font-size: 0.7em;
+        top: -25px;
+        right: -10px;
+        padding: 3px 6px;
+    }
+
     .route-number {
         width: 40px;
         height: 40px;
         font-size: 1.2em;
         padding: 8px;
+    }
+
+    .bus-details {
+        padding-right: 10px;
     }
 
     .bus-stop {

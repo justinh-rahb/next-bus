@@ -5,10 +5,13 @@
     <ul>
         {% for bus in buses %}
             <li class="bus-item">
+                <div class="status-indicator {% if bus.is_realtime %}realtime{% else %}static{% endif %}"
+                     title="{{ 'Live data' if bus.is_realtime else 'Scheduled time' }}">
+                </div>
                 <div class="route-number">{{ bus.route_name }}</div>
                 <div class="bus-details">
                     <div class="bus-stop">{{ bus.trip_headsign }}</div>
-                    <div class="bus-countdown">Arriving in {{ bus.countdown }} minutes</div>
+                    <div class="bus-countdown">{{ bus.arrival_type }} {{ bus.countdown_text }}</div>
                 </div>
                 <div class="arrival-time">{{ bus.arrival_time_formatted }}</div>
             </li>

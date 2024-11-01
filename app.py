@@ -102,11 +102,75 @@ def load_trips(gtfs_zip):
             trips[row['trip_id']] = row['trip_headsign']
     return trips
 
+def load_static_schedule(gtfs_zip):
+    # Load stop_times.txt
+    stop_times = []
+    with gtfs_zip.open('stop_times.txt') as stop_times_file:
+        reader = csv.DictReader(io.TextIOWrapper(stop_times_file, encoding='utf-8'))
+        for row in reader:
+            stop_times.append({
+                'trip_id': row['trip_id'],
+                'arrival_time': row['arrival_time'],
+                'stop_id': row['stop_id']
+            })
+    return stop_times
+
+def parse_static_time(time_str, base_date):
+    # Handle times past midnight (e.g., "25:30:00")
+    hours, minutes, seconds = map(int, time_str.split(':'))
+    extra_days = hours // 24
+    hours = hours % 24
+    
+    time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    dt = datetime.strptime(time_str, '%H:%M:%S')
+    
+    return base_date.replace(
+        hour=dt.hour,
+        minute=dt.minute,
+        second=dt.second
+    ) + timedelta(days=extra_days)
+
+def format_countdown(minutes):
+    if minutes == 0:
+        return "Arriving right now"
+    elif minutes == 1:
+        return "Arriving in 1 minute"
+    elif minutes >= 60:
+        hours = minutes // 60
+        remaining_minutes = minutes % 60
+        return f"Arriving in {hours} hr {remaining_minutes} min"
+    else:
+        return f"Arriving in {minutes} minutes"
+
+def get_static_times(stop_id, current_time, stop_times, routes, trips):
+    static_buses = []
+    base_date = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    for stop_time in stop_times:
+        if stop_time['stop_id'] == stop_id:
+            trip_id = stop_time['trip_id']
+            route_id = next((trip['route_id'] for trip in trips.values() if trip['trip_id'] == trip_id), None)
+            
+            if route_id:
+                arrival_time = parse_static_time(stop_time['arrival_time'], base_date)
+                
+                if arrival_time >= current_time:
+                    static_buses.append({
+                        'arrival_time': arrival_time,
+                        'route_id': route_id,
+                        'route_name': routes.get(route_id, route_id),
+                        'trip_headsign': trips.get(trip_id, {}).get('headsign', ''),
+                        'is_realtime': False
+                    })
+    
+    return static_buses
+
 # Load all GTFS static data
 gtfs_zip = download_and_extract_gtfs_static()
 stops = load_stops(gtfs_zip)
 stops_dict = {stop['stop_id']: stop['stop_name'] for stop in stops}
 routes = load_routes(gtfs_zip)
+stop_times = load_static_schedule(gtfs_zip)
 trips = load_trips(gtfs_zip)
 
 @app.route('/')
@@ -134,52 +198,52 @@ def get_next_bus():
         else:
             return render_template('bus_times.html', error=error_message)
 
-    try:
-        # Fetch GTFS Realtime data with timeout and SSL error handling
-        response = requests.get(GTFS_REALTIME_URL, timeout=15)
-        response.raise_for_status()
-    except Exception as e:
-        print(f"An error occurred while fetching realtime data: {e}")
-        if json_mode:
-            return jsonify({'error': 'Failed to fetch realtime data'}), 500
-        else:
-            # Return the same template without replacing the content
-            return '', 204
+    next_buses = []
+    realtime_available = True
 
     try:
+        # Fetch GTFS Realtime data
+        response = requests.get(GTFS_REALTIME_URL, timeout=15)
+        response.raise_for_status()
+        
         # Parse the GTFS Realtime data
         feed = gtfs_realtime_pb2.FeedMessage()
         feed.ParseFromString(response.content)
+        
+        current_time = datetime.now(gtfs_timezone)
+        
+        for entity in feed.entity:
+            if entity.HasField('trip_update'):
+                trip_update = entity.trip_update
+                trip_id = trip_update.trip.trip_id
+                route_id = trip_update.trip.route_id
+                trip_headsign = trips.get(trip_id, '')
+                route_name = routes.get(route_id, route_id)
+
+                for stop_time_update in trip_update.stop_time_update:
+                    if stop_time_update.stop_id == stop_id:
+                        arrival_time = datetime.fromtimestamp(
+                            stop_time_update.arrival.time,
+                            gtfs_timezone
+                        )
+                        if arrival_time >= current_time:
+                            next_buses.append({
+                                'arrival_time': arrival_time,
+                                'route_id': route_id,
+                                'route_name': route_name,
+                                'trip_headsign': trip_headsign,
+                                'is_realtime': True
+                            })
+                            
     except Exception as e:
-        print(f"Error parsing GTFS Realtime data: {e}")
-        if json_mode:
-            return jsonify({'error': 'Failed to parse realtime data'}), 500
-        else:
-            return '', 204
+        logging.error(f"Error fetching realtime data: {e}")
+        realtime_available = False
 
-    current_time = int(time.time())
-
-    next_buses = []
-    for entity in feed.entity:
-        if entity.HasField('trip_update'):
-            trip_update = entity.trip_update
-            trip_id = trip_update.trip.trip_id
-            route_id = trip_update.trip.route_id
-            trip_headsign = trips.get(trip_id, '')
-            route_name = routes.get(route_id, route_id)
-
-            for stop_time_update in trip_update.stop_time_update:
-                if stop_time_update.stop_id == stop_id:
-                    arrival_time = stop_time_update.arrival.time
-                    if arrival_time >= current_time:
-                        # Convert UNIX timestamp to local time
-                        local_arrival_time = datetime.fromtimestamp(arrival_time, gtfs_timezone)
-                        next_buses.append({
-                            'arrival_time': local_arrival_time,
-                            'route_id': route_id,
-                            'route_name': route_name,
-                            'trip_headsign': trip_headsign
-                        })
+    # If no realtime data or realtime fetch failed, get static times
+    if not next_buses or not realtime_available:
+        current_time = datetime.now(gtfs_timezone)
+        static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
+        next_buses.extend(static_buses)
 
     if not next_buses:
         error_message = 'No upcoming buses found for this stop.'
@@ -190,19 +254,18 @@ def get_next_bus():
 
     # Sort buses by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])
-
-    # Limit to next 5 buses
-    next_buses = next_buses[:5]
+    next_buses = next_buses[:5]  # Limit to next 5 buses
 
     stop_name = stops_dict[stop_id]
-
-    # Calculate countdown and format arrival time
     now = datetime.now(gtfs_timezone)
+
+    # Calculate countdown and format times
     for bus in next_buses:
         countdown = int((bus['arrival_time'] - now).total_seconds() / 60)
         bus['countdown'] = max(countdown, 0)
+        bus['countdown_text'] = format_countdown(bus['countdown'])
+        bus['arrival_type'] = 'Arriving' if bus['is_realtime'] else 'Scheduled'
         bus['arrival_time_formatted'] = bus['arrival_time'].strftime('%I:%M %p')
-        # Convert arrival_time to ISO format for JSON serialization
         bus['arrival_time'] = bus['arrival_time'].isoformat()
 
     if json_mode:

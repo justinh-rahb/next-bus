@@ -260,9 +260,24 @@ def get_next_bus():
         else:
             return render_template('bus_times.html', error=error_message, stop_id=stop_id)
 
-    # Sort buses by arrival time
+    # Sort and deduplicate buses by route, destination, and arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])
-    next_buses = next_buses[:5]  # Limit to next 5 buses
+    deduplicated_buses = []
+    seen = set()
+    
+    for bus in next_buses:
+        bus_key = (
+            bus['route_name'],
+            bus['trip_headsign'],
+            bus['arrival_time'].strftime('%H:%M')
+        )
+        
+        if bus_key not in seen:
+            seen.add(bus_key)
+            deduplicated_buses.append(bus)
+
+    # Limit to next 5 buses after deduplication
+    next_buses = deduplicated_buses[:5]
 
     stop_name = stops_dict[stop_id]
     now = datetime.now(gtfs_timezone)

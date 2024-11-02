@@ -283,6 +283,7 @@ def get_next_bus():
     four_hours_from_now = current_time + timedelta(hours=4)
 
     # Gather scheduled buses
+    gtfs_zip = load_gtfs_static()
     if len(next_buses) < 5:
         static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
 

@@ -299,6 +299,13 @@ def get_next_bus():
                 next_buses.append(bus)
                 if len(next_buses) == 5:
                     break
+            else:
+                # Log excluded buses at debug level
+                logging.debug(
+                    f"Excluding scheduled bus with arrival time {bus['arrival_time']} "
+                    f"for route {bus['route_name']} due to filter constraints "
+                    f"(last_live_arrival: {last_live_arrival}, four_hours_from_now: {four_hours_from_now})"
+                )
 
     # Sort the list of all buses (live and scheduled) by arrival time
     next_buses.sort(key=lambda x: x['arrival_time'])

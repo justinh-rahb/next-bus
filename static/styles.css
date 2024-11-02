@@ -92,8 +92,8 @@ header h1 {
     cursor: pointer;
     color: var(--text-color);
     font-size: 1.2em;
-    height: 61px;
-    width: 61px;
+    height: 58px;
+    width: 58px;
     display: flex;
     align-items: center;
     justify-content: center;

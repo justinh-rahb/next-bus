@@ -45,7 +45,14 @@ from requests.exceptions import RequestException, SSLError, ConnectionError, Tim
 from flask import Flask, request, render_template, jsonify, send_from_directory
 from google.transit import gtfs_realtime_pb2
 
-logging.basicConfig(level=logging.INFO)
+
+log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='[%(asctime)s +0000] [%(process)d] [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 app = Flask(__name__)
 
@@ -71,7 +78,7 @@ CACHE_DURATION = timedelta(days=1)  # Cache duration
 
 # Download and parse GTFS static data
 def download_and_extract_gtfs_static():
-    logging.info("Downloading GTFS static data...")
+    logging.info(f"Downloading GTFS static data: {GTFS_STATIC_URL}")
     response = requests.get(GTFS_STATIC_URL)
     if response.status_code != 200:
         raise Exception(f'Failed to download GTFS static data: {response.status_code}')
@@ -273,7 +280,7 @@ def get_next_bus():
             time.sleep(5)  # Wait before retrying
 
         if attempt == max_retries:
-            logging.error("Failed to fetch real-time data after 3 attempts.")
+            logging.error(f"Failed to fetch real-time data after 3 attempts: {GTFS_REALTIME_URL}")
             realtime_available = False
 
     # Sort live buses by arrival time

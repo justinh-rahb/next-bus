@@ -84,7 +84,6 @@ def is_cache_valid():
     if os.path.exists(CACHE_FILE):
         cache_age = datetime.now() - datetime.fromtimestamp(os.path.getmtime(CACHE_FILE))
         if cache_age <= CACHE_DURATION:
-            logging.info("Using cached GTFS static data")
             return True
     return False
 

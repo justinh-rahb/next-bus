@@ -168,6 +168,22 @@ class GTFSDataManager:
 # Initialize the GTFS data manager
 gtfs_manager = GTFSDataManager()
 
+def format_countdown(minutes, is_realtime):
+    prefix = "Arriving" if is_realtime else "Scheduled"
+
+    if minutes == 0:
+        return f"{prefix} now"
+    elif minutes == 1:
+        return f"{prefix} in 1 minute"
+    elif minutes >= 60:
+        hours = minutes // 60
+        remaining_minutes = minutes % 60
+        if remaining_minutes == 0:
+            return f"{prefix} in {hours} hr{'s' if hours > 1 else ''}"
+        return f"{prefix} in {hours} hr{'s' if hours > 1 else ''} {remaining_minutes} min"
+    else:
+        return f"{prefix} in {minutes} minutes"
+
 @app.route('/')
 def index():
     stop_id = request.args.get('stop_id')

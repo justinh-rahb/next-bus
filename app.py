@@ -72,6 +72,21 @@ logo_url = os.environ.get('AGENCY_LOGO_URL')
 # JSON Mode Flag
 json_mode = os.environ.get('JSON_MODE', 'false').lower() == 'true'
 
+def parse_static_time(time_str, base_date):
+    # Handle times past midnight (e.g., "25:30:00")
+    hours, minutes, seconds = map(int, time_str.split(':'))
+    extra_days = hours // 24
+    hours = hours % 24
+
+    time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    dt = datetime.strptime(time_str, '%H:%M:%S')
+
+    return base_date.replace(
+        hour=dt.hour,
+        minute=dt.minute,
+        second=dt.second
+    ) + timedelta(days=extra_days)
+
 class GTFSDataManager:
     def __init__(self):
         self.stops = []

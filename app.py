@@ -84,7 +84,6 @@ def download_and_extract_gtfs_static():
         raise Exception(f'Failed to download GTFS static data: {response.status_code}')
     with open(CACHE_FILE, 'wb') as f:
         f.write(response.content)
-    return zipfile.ZipFile(io.BytesIO(response.content))
 
 # Check if the cache file exists and is recent enough
 def is_cache_valid():
@@ -96,54 +95,56 @@ def is_cache_valid():
 
 # Load GTFS static data from cache or download if necessary
 def load_gtfs_static():
-    if is_cache_valid():
-        with zipfile.ZipFile(CACHE_FILE, 'r') as gtfs_zip:
-            return gtfs_zip
-    else:
-        return download_and_extract_gtfs_static()
+    if not is_cache_valid():
+        download_and_extract_gtfs_static()
+    return zipfile.ZipFile(CACHE_FILE, 'r')
 
 # Load stop data
-def load_stops(gtfs_zip):
-    stops = []
-    with gtfs_zip.open('stops.txt') as stops_file:
-        reader = csv.DictReader(io.TextIOWrapper(stops_file, encoding='utf-8'))
-        for row in reader:
-            stops.append({'stop_id': row['stop_id'], 'stop_name': row['stop_name']})
-    return stops
+def load_stops():
+    with load_gtfs_static() as gtfs_zip:
+        stops = []
+        with gtfs_zip.open('stops.txt') as stops_file:
+            reader = csv.DictReader(io.TextIOWrapper(stops_file, encoding='utf-8'))
+            for row in reader:
+                stops.append({'stop_id': row['stop_id'], 'stop_name': row['stop_name']})
+        return stops
 
 # Load route data
-def load_routes(gtfs_zip):
-    routes = {}
-    with gtfs_zip.open('routes.txt') as routes_file:
-        reader = csv.DictReader(io.TextIOWrapper(routes_file, encoding='utf-8'))
-        for row in reader:
-            routes[row['route_id']] = row['route_short_name']
-    return routes
+def load_routes():
+    with load_gtfs_static() as gtfs_zip:
+        routes = {}
+        with gtfs_zip.open('routes.txt') as routes_file:
+            reader = csv.DictReader(io.TextIOWrapper(routes_file, encoding='utf-8'))
+            for row in reader:
+                routes[row['route_id']] = row['route_short_name']
+        return routes
 
 # Load trip data
-def load_trips(gtfs_zip):
-    trips = {}
-    with gtfs_zip.open('trips.txt') as trips_file:
-        reader = csv.DictReader(io.TextIOWrapper(trips_file, encoding='utf-8'))
-        for row in reader:
-            trips[row['trip_id']] = {
-                'route_id': row['route_id'],
-                'headsign': row['trip_headsign']
-            }
-    return trips
+def load_trips():
+    with load_gtfs_static() as gtfs_zip:
+        trips = {}
+        with gtfs_zip.open('trips.txt') as trips_file:
+            reader = csv.DictReader(io.TextIOWrapper(trips_file, encoding='utf-8'))
+            for row in reader:
+                trips[row['trip_id']] = {
+                    'route_id': row['route_id'],
+                    'headsign': row['trip_headsign']
+                }
+        return trips
 
-def load_static_schedule(gtfs_zip):
-    # Load stop_times.txt
-    stop_times = []
-    with gtfs_zip.open('stop_times.txt') as stop_times_file:
-        reader = csv.DictReader(io.TextIOWrapper(stop_times_file, encoding='utf-8'))
-        for row in reader:
-            stop_times.append({
-                'trip_id': row['trip_id'],
-                'arrival_time': row['arrival_time'],
-                'stop_id': row['stop_id']
-            })
-    return stop_times
+def load_static_schedule():
+    with load_gtfs_static() as gtfs_zip:
+        # Load stop_times.txt
+        stop_times = []
+        with gtfs_zip.open('stop_times.txt') as stop_times_file:
+            reader = csv.DictReader(io.TextIOWrapper(stop_times_file, encoding='utf-8'))
+            for row in reader:
+                stop_times.append({
+                    'trip_id': row['trip_id'],
+                    'arrival_time': row['arrival_time'],
+                    'stop_id': row['stop_id']
+                })
+        return stop_times
 
 def parse_static_time(time_str, base_date):
     # Handle times past midnight (e.g., "25:30:00")
@@ -200,14 +201,6 @@ def get_static_times(stop_id, current_time, stop_times, routes, trips):
 
     return static_buses
 
-# Load all GTFS static data
-gtfs_zip = load_gtfs_static()
-stops = load_stops(gtfs_zip)
-stops_dict = {stop['stop_id']: stop['stop_name'] for stop in stops}
-routes = load_routes(gtfs_zip)
-stop_times = load_static_schedule(gtfs_zip)
-trips = load_trips(gtfs_zip)
-
 @app.route('/')
 def index():
     stop_id = request.args.get('stop_id')
@@ -225,6 +218,11 @@ def get_next_bus():
             return jsonify({'error': error_message}), 400
         else:
             return render_template('bus_times.html', error=error_message)
+
+    stops_dict = {stop['stop_id']: stop['stop_name'] for stop in load_stops()}
+    routes = load_routes()
+    trips = load_trips()
+    stop_times = load_static_schedule()
 
     if stop_id not in stops_dict:
         error_message = 'Invalid stop ID'
@@ -283,15 +281,11 @@ def get_next_bus():
             logging.error(f"Failed to fetch real-time data after 3 attempts: {GTFS_REALTIME_URL}")
             realtime_available = False
 
-    # Sort live buses by arrival time
-    next_buses.sort(key=lambda x: x['arrival_time'])
-    last_live_arrival = next_buses[-1]['arrival_time'] if next_buses else current_time
-    four_hours_from_now = current_time + timedelta(hours=4)
-
-    # Gather scheduled buses
-    gtfs_zip = load_gtfs_static()
+    # Sort and filter scheduled buses if fewer than 5 live buses are found
     if len(next_buses) < 5:
         static_buses = get_static_times(stop_id, current_time, stop_times, routes, trips)
+        last_live_arrival = next_buses[-1]['arrival_time'] if next_buses else current_time
+        four_hours_from_now = current_time + timedelta(hours=4)
 
         # Only add scheduled buses that are after the last live bus and within 4 hours
         for bus in static_buses:

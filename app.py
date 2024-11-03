@@ -332,6 +332,8 @@ def get_next_bus():
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():
     query = request.args.get('q', '').lower()
+    # Load stops data within the function
+    stops = load_stops()
     suggestions = [
         {'stop_id': stop['stop_id'], 'stop_name': stop['stop_name']}
         for stop in stops

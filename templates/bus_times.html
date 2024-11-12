@@ -20,5 +20,5 @@
     <!-- Hidden div to trigger auto-refresh -->
     <div id="auto-refresh" hx-get="/next-bus?stop_id={{ stop_id }}" hx-trigger="every 60000ms, refresh" hx-target="#bus-times" hx-swap="innerHTML"></div>
 {% else %}
-    <p>No upcoming buses found for this stop.</p>
+    <p class="error">No upcoming buses found for this stop.</p>
 {% endif %}

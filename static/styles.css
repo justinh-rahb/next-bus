@@ -176,8 +176,8 @@ header h1 {
     border-radius: 50%;
     background-color: var(--realtime-indicator);
     position: absolute;
-    top: 0;       /* Position in the top-right corner */
-    right: 0;
+    top: 8px;
+    right: 8px;
 }
 
 .status-indicator.realtime {

@@ -77,14 +77,14 @@ header h1 {
     padding: 0;
 }
 
-/* Favorites Button Positioning */
+/* Favourites Button Positioning */
 .bus-times-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.favorite-button {
+.favourite-button {
     background: none;
     border: none;
     cursor: pointer;
@@ -96,11 +96,11 @@ header h1 {
     align-items: center;
 }
 
-.favorite-button.active {
+.favourite-button.active {
     color: #FFC107;
 }
 
-.favorite-button:hover {
+.favourite-button:hover {
     color: #FFC107;
     opacity: 0.8;
 }

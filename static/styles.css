@@ -61,6 +61,22 @@ header h1 {
     margin: 1rem;
 }
 
+/* Theme Toggle Hover */
+#theme-toggle:hover {
+    opacity: 0.8;
+}
+
+/* Bus Times Section */
+#bus-times {
+    max-width: 600px;
+    margin: 25px auto;
+}
+
+#bus-times ul {
+    list-style-type: none;
+    padding: 0;
+}
+
 /* Favorites Button Positioning */
 .bus-times-header {
     display: flex;
@@ -77,12 +93,101 @@ header h1 {
     font-size: 1.2em;
     transition: color 0.2s ease;
     display: flex;
-    align-items: center; /* Center vertically */
-    margin-left: auto; /* Push to the right end */
+    align-items: center;
 }
 
 .favorite-button.active {
     color: #FFC107;
+}
+
+.favorite-button:hover {
+    color: #FFC107;
+    opacity: 0.8;
+}
+
+/* Card Layout for Each Bus Schedule Item */
+#bus-times li.bus-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background-color: var(--list-item-background);
+    margin: 5px 0;
+    padding: 10px; /* Reduced padding for better compactness */
+    border-radius: 10px;
+    font-size: 1em; /* Reduced font size */
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Route Number Box */
+.route-number {
+    font-size: 1.2em;
+    font-weight: bold;
+    border: 2px solid var(--text-color);
+    border-radius: 8px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+
+/* Bus Details in Card */
+.bus-details {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: 10px;
+}
+
+.bus-stop {
+    font-size: 1.1em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bus-countdown {
+    font-size: 0.85em;
+    color: var(--bus-countdown-color);
+}
+
+/* Arrival Time and Status Pip Alignment */
+.arrival-time-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative; /* Relative positioning to contain the absolute indicator */
+}
+
+.arrival-time {
+    font-size: 1em;
+    font-weight: bold;
+    text-align: right;
+}
+
+/* Status Indicator (Pip) positioned in the top-right of arrival time container */
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--realtime-indicator);
+    position: absolute;
+    top: 0;       /* Position in the top-right corner */
+    right: 0;
+}
+
+.status-indicator.realtime {
+    background-color: var(--realtime-indicator);
+    box-shadow: 0 0 4px var(--realtime-indicator);
+}
+
+.status-indicator.static {
+    background-color: var(--static-indicator);
+    box-shadow: 0 0 4px var(--static-indicator);
 }
 
 /* Favourites Section */
@@ -139,17 +244,8 @@ header h1 {
     top: 4px;
 }
 
-.favourite-button.active {
-    color: #FFC107;
-}
-
-.favourite-button:hover {
-    color: #FFC107;
-    opacity: 0.8;
-}
-
 /* Form Section */
-#input-form, #bus-times {
+#input-form {
     max-width: 600px;
     margin: 0 auto;
 }
@@ -194,8 +290,7 @@ header h1 {
     flex-shrink: 0;
 }
 
-#search-button:hover,
-#theme-toggle:hover {
+#search-button:hover {
     opacity: 0.8;
 }
 
@@ -211,101 +306,10 @@ header h1 {
     height: 40px;
 }
 
-/* Status Indicators */
-.status-indicator {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    transition: transform 0.2s ease;
-}
-
-.status-indicator:hover {
-    transform: scale(1.5);
-}
-
-.status-indicator::before {
-    content: attr(title);
-    position: absolute;
-    top: -30px;
-    right: -5px;
-    background: var(--background-color);
-    color: var(--text-color);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75em;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    pointer-events: none;
-}
-
-.status-indicator.realtime {
-    background-color: var(--realtime-indicator);
-    box-shadow: 0 0 4px var(--realtime-indicator);
-}
-
-.status-indicator.static {
-    background-color: var(--static-indicator);
-    box-shadow: 0 0 4px var(--static-indicator);
-}
-
-/* Route Number */
-.route-number {
-    font-size: 1.2em;
-    font-weight: bold;
-    border: 2px solid var(--text-color);
-    border-radius: 8px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 50px;
-    height: 50px;
-    flex-shrink: 0;
+/* General Heading Styling */
+h2 {
     text-align: center;
-    margin-right: 10px;
-}
-
-/* Bus Details */
-.bus-details {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    margin-left: 10px;
-    overflow: hidden;
-    white-space: nowrap;
-}
-
-.bus-stop {
-    font-size: 1.1em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-}
-
-.bus-countdown {
-    font-size: 0.85em;
-    color: var(--bus-countdown-color);
-}
-
-.arrival-time {
-    font-size: 1em;
-    font-weight: bold;
-    text-align: right;
-    flex-shrink: 0;
-    padding-left: 15px;
-    align-self: center;
-    min-width: 80px;
-}
-
-.error {
-    color: red;
-    text-align: center;
+    font-size: 1.3em; /* Adjusted for smaller base font size */
 }
 
 /* Autocomplete styles */
@@ -452,8 +456,6 @@ button[type="submit"] {
     .status-indicator {
         width: 6px;
         height: 6px;
-        top: 6px;
-        right: 6px;
     }
 
     .status-indicator::before {

@@ -219,21 +219,21 @@ class FavouritesManager {
     }
 
     addFavouriteButtonToBusTimes() {
-        const busTimesHeader = document.querySelector('#bus-times h2');
+        const busTimesHeader = document.querySelector('.bus-times-header');
         if (!busTimesHeader) return;
 
-        const stopName = busTimesHeader.textContent.replace('Upcoming Buses at ', '').trim();
+        const stopName = busTimesHeader.querySelector('h2').textContent.trim();
         const stopId = new URLSearchParams(window.location.search).get('stop_id');
-        
+
         if (!stopId) return;
 
-        if (!document.querySelector('.favourite-button')) {
+        if (!busTimesHeader.querySelector('.favourite-button')) {
             const favouriteButton = document.createElement('button');
             favouriteButton.className = `favourite-button ${this.favourites[stopId] ? 'active' : ''}`;
             favouriteButton.dataset.stopId = stopId;
             favouriteButton.title = this.favourites[stopId] ? 'Remove from favourites' : 'Add to favourites';
             favouriteButton.innerHTML = `<i class="fas fa-star"></i>`;
-            
+
             favouriteButton.addEventListener('click', () => this.toggleFavourite(stopId, stopName));
             
             busTimesHeader.appendChild(favouriteButton);

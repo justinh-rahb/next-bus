@@ -61,6 +61,30 @@ header h1 {
     margin: 1rem;
 }
 
+/* Favorites Button Positioning */
+.bus-times-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.favorite-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 0.5rem;
+    font-size: 1.2em;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center; /* Center vertically */
+    margin-left: auto; /* Push to the right end */
+}
+
+.favorite-button.active {
+    color: #FFC107;
+}
+
 /* Favourites Section */
 .favourites-container {
     max-width: 600px;
@@ -219,12 +243,7 @@ header h1 {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     pointer-events: none;
 }
-/*
-.status-indicator:hover::before {
-    opacity: 1;
-    visibility: visible;
-}
-*/
+
 .status-indicator.realtime {
     background-color: var(--realtime-indicator);
     box-shadow: 0 0 4px var(--realtime-indicator);
@@ -235,6 +254,7 @@ header h1 {
     box-shadow: 0 0 4px var(--static-indicator);
 }
 
+/* Route Number */
 .route-number {
     font-size: 1.2em;
     font-weight: bold;
@@ -248,8 +268,10 @@ header h1 {
     height: 50px;
     flex-shrink: 0;
     text-align: center;
+    margin-right: 10px;
 }
 
+/* Bus Details */
 .bus-details {
     display: flex;
     flex-direction: column;
@@ -285,12 +307,7 @@ header h1 {
     color: red;
     text-align: center;
 }
-/*
-h2 {
-    text-align: center;
-    font-size: 1.3em;
-}
-*/
+
 /* Autocomplete styles */
 .input-container {
     display: flex;

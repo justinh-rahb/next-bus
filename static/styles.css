@@ -19,7 +19,7 @@
 
 body {
     font-family: 'Roboto', sans-serif;
-    font-size: 1.1em; /* Reduced base font size */
+    font-size: 1.1em;
     margin: 0;
     padding: 20px;
     background-color: var(--background-color);
@@ -61,8 +61,71 @@ header h1 {
     margin: 1rem;
 }
 
-#input-form {
-    width: 100%;
+/* Favourites Section */
+.favourites-container {
+    max-width: 600px;
+    margin: 0 auto 2rem;
+}
+
+.favourites-container h2 {
+    text-align: center;
+    font-size: 1.3em;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.favourites-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.favourite-card {
+    background-color: var(--list-item-background);
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+
+.favourite-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.favourite-card h3 {
+    margin: 0;
+    font-size: 1em;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.favourite-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 0.5rem;
+    font-size: 1.2em;
+    transition: color 0.2s ease;
+    position: absolute;
+    right: 4px;
+    top: 4px;
+}
+
+.favourite-button.active {
+    color: #FFC107;
+}
+
+.favourite-button:hover {
+    color: #FFC107;
+    opacity: 0.8;
+}
+
+/* Form Section */
+#input-form, #bus-times {
     max-width: 600px;
     margin: 0 auto;
 }
@@ -74,6 +137,13 @@ header h1 {
     width: 100%;
 }
 
+#stop-form input[type="text"],
+#search-button,
+#theme-toggle {
+    color: var(--text-color);
+    background-color: var(--background-color);
+}
+
 #stop-form input[type="text"] {
     flex: 1;
     width: calc(100% - 60px);
@@ -81,8 +151,8 @@ header h1 {
     font-size: 1.2em;
     border: 2px solid #ccc;
     border-radius: 5px;
-    color: var(--text-color);
-    background-color: var(--background-color);
+    /* color: var(--text-color);
+    background-color: var(--background-color); */
 }
 
 #search-button {
@@ -100,7 +170,8 @@ header h1 {
     flex-shrink: 0;
 }
 
-#search-button:hover {
+#search-button:hover,
+#theme-toggle:hover {
     opacity: 0.8;
 }
 
@@ -116,32 +187,7 @@ header h1 {
     height: 40px;
 }
 
-#theme-toggle:hover {
-    opacity: 0.8;
-}
-
-#bus-times {
-    max-width: 600px;
-    margin: 25px auto;
-}
-
-#bus-times ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-#bus-times li.bus-item {
-    position: relative;
-    display: flex;
-    align-items: center;
-    background-color: var(--list-item-background);
-    margin: 5px 0;
-    padding: 10px; /* Reduced padding for better compactness */
-    border-radius: 10px;
-    font-size: 1em; /* Reduced font size */
-    justify-content: space-between;
-}
-
+/* Status Indicators */
 .status-indicator {
     position: absolute;
     top: 8px;
@@ -173,12 +219,12 @@ header h1 {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     pointer-events: none;
 }
-
+/*
 .status-indicator:hover::before {
     opacity: 1;
     visibility: visible;
 }
-
+*/
 .status-indicator.realtime {
     background-color: var(--realtime-indicator);
     box-shadow: 0 0 4px var(--realtime-indicator);
@@ -190,11 +236,11 @@ header h1 {
 }
 
 .route-number {
-    font-size: 1.2em; /* Adjusted font size */
+    font-size: 1.2em;
     font-weight: bold;
     border: 2px solid var(--text-color);
     border-radius: 8px;
-    padding: 0; /* Removed extra padding */
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -208,29 +254,29 @@ header h1 {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    margin-left: 10px; /* Adjusted for spacing */
+    margin-left: 10px;
     overflow: hidden;
     white-space: nowrap;
 }
 
 .bus-stop {
-    font-size: 1.1em; /* Slightly reduced */
+    font-size: 1.1em;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
 }
 
 .bus-countdown {
-    font-size: 0.85em; /* Slightly reduced */
+    font-size: 0.85em;
     color: var(--bus-countdown-color);
 }
 
 .arrival-time {
-    font-size: 1em; /* Adjusted to match */
+    font-size: 1em;
     font-weight: bold;
     text-align: right;
     flex-shrink: 0;
-    padding-left: 15px; /* Reduced padding for compact look */
+    padding-left: 15px;
     align-self: center;
     min-width: 80px;
 }
@@ -239,12 +285,12 @@ header h1 {
     color: red;
     text-align: center;
 }
-
+/*
 h2 {
     text-align: center;
-    font-size: 1.3em; /* Adjusted for smaller base font size */
+    font-size: 1.3em;
 }
-
+*/
 /* Autocomplete styles */
 .input-container {
     display: flex;

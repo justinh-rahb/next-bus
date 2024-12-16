@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <!-- Favourites section -->
+    <div id="favourites-section" class="favourites-container">
+        <h2>Favourite Stops</h2>
+        <div id="favourites-list" class="favourites-grid">
+            <!-- Favourites will be populated by JavaScript -->
+        </div>
+    </div>
     <!-- Input form -->
     <div id="input-form">
         <form id="stop-form" hx-get="/next-bus" hx-target="#bus-times" hx-swap="innerHTML">

@@ -19,7 +19,7 @@
 
 body {
     font-family: 'Roboto', sans-serif;
-    font-size: 1.1em; /* Reduced base font size */
+    font-size: 1.1em;
     margin: 0;
     padding: 20px;
     background-color: var(--background-color);
@@ -61,8 +61,191 @@ header h1 {
     margin: 1rem;
 }
 
+/* Theme Toggle Hover */
+#theme-toggle:hover {
+    opacity: 0.8;
+}
+
+/* Bus Times Section */
+#bus-times {
+    max-width: 600px;
+    margin: 25px auto;
+}
+
+#bus-times ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+/* Favourites Button Positioning */
+.bus-times-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.favourite-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 0.5rem;
+    font-size: 1.2em;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.favourite-button.active {
+    color: #FFC107;
+}
+
+.favourite-button:hover {
+    color: #FFC107;
+    opacity: 0.8;
+}
+
+/* Card Layout for Each Bus Schedule Item */
+#bus-times li.bus-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background-color: var(--list-item-background);
+    margin: 5px 0;
+    padding: 10px; /* Reduced padding for better compactness */
+    border-radius: 10px;
+    font-size: 1em; /* Reduced font size */
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Route Number Box */
+.route-number {
+    font-size: 1.2em;
+    font-weight: bold;
+    border: 2px solid var(--text-color);
+    border-radius: 8px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+
+/* Bus Details in Card */
+.bus-details {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: 10px;
+}
+
+.bus-stop {
+    font-size: 1.1em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bus-countdown {
+    font-size: 0.85em;
+    color: var(--bus-countdown-color);
+}
+
+/* Arrival Time and Status Pip Alignment */
+.arrival-time-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative; /* Relative positioning to contain the absolute indicator */
+}
+
+.arrival-time {
+    font-size: 1em;
+    font-weight: bold;
+    text-align: right;
+}
+
+/* Status Indicator (Pip) positioned in the top-right of arrival time container */
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--realtime-indicator);
+    position: absolute;
+    top: 8px;
+    right: 8px;
+}
+
+.status-indicator.realtime {
+    background-color: var(--realtime-indicator);
+    box-shadow: 0 0 4px var(--realtime-indicator);
+}
+
+.status-indicator.static {
+    background-color: var(--static-indicator);
+    box-shadow: 0 0 4px var(--static-indicator);
+}
+
+/* Favourites Section */
+.favourites-container {
+    max-width: 600px;
+    margin: 0 auto 2rem;
+}
+
+.favourites-container h2 {
+    text-align: center;
+    font-size: 1.3em;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.favourites-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.favourite-card {
+    background-color: var(--list-item-background);
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+
+.favourite-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.favourite-card h3 {
+    margin: 0;
+    font-size: 1em;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.favourite-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 0.5rem;
+    font-size: 1.2em;
+    transition: color 0.2s ease;
+    position: absolute;
+    right: 4px;
+    top: 4px;
+}
+
+/* Form Section */
 #input-form {
-    width: 100%;
     max-width: 600px;
     margin: 0 auto;
 }
@@ -74,6 +257,13 @@ header h1 {
     width: 100%;
 }
 
+#stop-form input[type="text"],
+#search-button,
+#theme-toggle {
+    color: var(--text-color);
+    background-color: var(--background-color);
+}
+
 #stop-form input[type="text"] {
     flex: 1;
     width: calc(100% - 60px);
@@ -81,8 +271,8 @@ header h1 {
     font-size: 1.2em;
     border: 2px solid #ccc;
     border-radius: 5px;
-    color: var(--text-color);
-    background-color: var(--background-color);
+    /* color: var(--text-color);
+    background-color: var(--background-color); */
 }
 
 #search-button {
@@ -116,130 +306,7 @@ header h1 {
     height: 40px;
 }
 
-#theme-toggle:hover {
-    opacity: 0.8;
-}
-
-#bus-times {
-    max-width: 600px;
-    margin: 25px auto;
-}
-
-#bus-times ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-#bus-times li.bus-item {
-    position: relative;
-    display: flex;
-    align-items: center;
-    background-color: var(--list-item-background);
-    margin: 5px 0;
-    padding: 10px; /* Reduced padding for better compactness */
-    border-radius: 10px;
-    font-size: 1em; /* Reduced font size */
-    justify-content: space-between;
-}
-
-.status-indicator {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    transition: transform 0.2s ease;
-}
-
-.status-indicator:hover {
-    transform: scale(1.5);
-}
-
-.status-indicator::before {
-    content: attr(title);
-    position: absolute;
-    top: -30px;
-    right: -5px;
-    background: var(--background-color);
-    color: var(--text-color);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75em;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    pointer-events: none;
-}
-
-.status-indicator:hover::before {
-    opacity: 1;
-    visibility: visible;
-}
-
-.status-indicator.realtime {
-    background-color: var(--realtime-indicator);
-    box-shadow: 0 0 4px var(--realtime-indicator);
-}
-
-.status-indicator.static {
-    background-color: var(--static-indicator);
-    box-shadow: 0 0 4px var(--static-indicator);
-}
-
-.route-number {
-    font-size: 1.2em; /* Adjusted font size */
-    font-weight: bold;
-    border: 2px solid var(--text-color);
-    border-radius: 8px;
-    padding: 0; /* Removed extra padding */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 50px;
-    height: 50px;
-    flex-shrink: 0;
-    text-align: center;
-}
-
-.bus-details {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    margin-left: 10px; /* Adjusted for spacing */
-    overflow: hidden;
-    white-space: nowrap;
-}
-
-.bus-stop {
-    font-size: 1.1em; /* Slightly reduced */
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-}
-
-.bus-countdown {
-    font-size: 0.85em; /* Slightly reduced */
-    color: var(--bus-countdown-color);
-}
-
-.arrival-time {
-    font-size: 1em; /* Adjusted to match */
-    font-weight: bold;
-    text-align: right;
-    flex-shrink: 0;
-    padding-left: 15px; /* Reduced padding for compact look */
-    align-self: center;
-    min-width: 80px;
-}
-
-.error {
-    color: red;
-    text-align: center;
-}
-
+/* General Heading Styling */
 h2 {
     text-align: center;
     font-size: 1.3em; /* Adjusted for smaller base font size */
@@ -389,8 +456,6 @@ button[type="submit"] {
     .status-indicator {
         width: 6px;
         height: 6px;
-        top: 6px;
-        right: 6px;
     }
 
     .status-indicator::before {

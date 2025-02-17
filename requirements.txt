@@ -3,7 +3,7 @@ certifi==2025.1.31
 charset-normalizer==3.4.1
 click==8.1.8
 Flask==3.1.0
-googleapis-common-protos==1.66.0
+googleapis-common-protos==1.67.0
 gtfs-realtime-bindings==1.0.0
 gunicorn==23.0.0
 idna==3.10

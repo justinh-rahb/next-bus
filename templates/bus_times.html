@@ -1,7 +1,9 @@
 {% if error %}
     <div class="error">{{ error }}</div>
 {% elif buses %}
-    <h2>Upcoming Buses at {{ stop_name }}</h2>
+    <div class="bus-times-header">
+        <h2>Upcoming Buses at {{ stop_name }}</h2>
+    </div>
     <ul>
         {% for bus in buses %}
             <li class="bus-item">

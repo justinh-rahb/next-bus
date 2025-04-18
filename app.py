@@ -58,7 +58,7 @@ app = Flask(__name__)
 
 # GTFS Realtime and Static Feed URLs
 GTFS_REALTIME_URL = os.environ.get('GTFS_REALTIME_URL', 'https://opendata.hamilton.ca/GTFS-RT/GTFS_TripUpdates.pb')
-GTFS_STATIC_URL = os.environ.get('GTFS_STATIC_URL', 'https://opendata.hamilton.ca/GTFS-Static/2025Winter_GTFSStatic.zip')
+GTFS_STATIC_URL = os.environ.get('GTFS_STATIC_URL', 'https://opendata.hamilton.ca/GTFS-Static/google_transit.zip')
 
 # Local timezone of transit agency
 gtfs_timezone = pytz.timezone(os.getenv('TZ', 'America/Toronto'))

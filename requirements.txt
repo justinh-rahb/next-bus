@@ -14,5 +14,5 @@ packaging==25.0
 protobuf==6.30.2
 pytz==2025.2
 requests==2.32.3
-urllib3==2.4.0
+urllib3==2.5.0
 Werkzeug==3.1.3

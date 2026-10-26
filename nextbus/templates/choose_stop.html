@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Stop {{ code }}{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Which stop {{ code }}?</h1>
+  <p class="status-msg">{{ choices | length }} stops share the number {{ code }}. Pick the one you're at.</p>
+  <ul class="stop-list">
+    {% for stop, href, routes in choices %}
+    <li>
+      <a href="{{ href }}">
+        <span class="name">{{ stop.name }}</span>
+        <span class="sub">{{ stop.desc | title if stop.desc and stop.desc != stop.name else "Stop " ~ stop.code }}</span>
+        <span class="mini-routes">
+          {% for r in routes[:8] %}
+          <span class="mini-route" {% if r.css_color %}style="--rc: {{ r.css_color }}; --rt: {{ r.css_text_color or '#fff' }}"{% endif %}>{{ r.label }}</span>
+          {% endfor %}
+        </span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

@@ -151,14 +151,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             only_routes=set(filter(None, request.query_params.get("route", "").split(","))),
         )
 
-    def redirect_to_stop(request: Request, stop: Stop | None, status_code: int) -> Response:
-        """Redirect to a stop page built only from known values, never raw query input.
+    def stop_link(request: Request, stop: Stop) -> str:
+        """Link to a stop page built only from known values, never raw query input.
 
-        The stop must exist in the feed, and only the stop page's own options are carried
-        over: theme and kiosk become fixed strings, routes are kept if they serve the stop.
+        Only the stop page's own options are carried over: theme and kiosk become fixed
+        strings, and routes are kept if they serve the stop.
         """
-        if stop is None:
-            raise HTTPException(404, "Unknown stop")
         params: dict[str, str] = {}
         q = request.query_params
         if q.get("theme") in ("light", "dark"):
@@ -170,7 +168,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if kept := [r for r in routes if r in wanted]:
             params["route"] = ",".join(kept)
         query = f"?{urlencode(params)}" if params else ""
-        return RedirectResponse(f"/stop/{quote(stop.stop_id, safe='')}{query}", status_code)
+        return f"/stop/{quote(stop.stop_id, safe='')}{query}"
+
+    def redirect_to_stop(request: Request, stop: Stop | None, status_code: int) -> Response:
+        if stop is None:
+            raise HTTPException(404, "Unknown stop")
+        return RedirectResponse(stop_link(request, stop), status_code)
 
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException):
@@ -193,7 +196,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/c/{code}")
     async def stop_by_code(request: Request, code: str):
-        return redirect_to_stop(request, feed_of(request).stop_by_code(code), 302)
+        feed = feed_of(request)
+        stops = feed.stops_by_code(code)
+        if not stops:
+            raise HTTPException(404, f"No stop with number {code}")
+        if len(stops) == 1:
+            return redirect_to_stop(request, stops[0], 302)
+        # The same number is on more than one sign, so let the rider pick.
+        choices = [(s, stop_link(request, s), feed.routes_for_stop(s.stop_id)) for s in stops]
+        return render(request, "choose_stop.html", code=code, choices=choices)
 
     @app.get("/stop/{stop_id}", response_class=HTMLResponse)
     async def stop_page(request: Request, stop_id: str):

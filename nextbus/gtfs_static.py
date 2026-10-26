@@ -270,13 +270,14 @@ class StaticFeed:
         )
         return Stop(*rows[0]) if rows else None
 
-    def stop_by_code(self, code: str) -> Stop | None:
+    def stops_by_code(self, code: str) -> list[Stop]:
+        """Stops with this number on their sign. Some agencies (HSR) reuse numbers."""
         rows = self._query(
             "SELECT stop_id, stop_code, stop_name, stop_desc, lat, lon FROM stops"
-            " WHERE stop_code = ? AND location_type = 0",
+            " WHERE stop_code = ? AND location_type = 0 ORDER BY stop_name",
             (code,),
         )
-        return Stop(*rows[0]) if rows else None
+        return [Stop(*row) for row in rows]
 
     def routes_for_stop(self, stop_id: str) -> list[Route]:
         rows = self._query("SELECT route_id FROM stop_routes WHERE stop_id = ?", (stop_id,))

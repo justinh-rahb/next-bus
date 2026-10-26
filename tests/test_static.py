@@ -67,6 +67,13 @@ def test_search_by_stop_code(feed):
     assert results[0].stop_id == "S2"
 
 
+def test_stops_by_code_returns_every_stop_sharing_a_number(feed):
+    assert [s.stop_id for s in feed.stops_by_code("2002")] == ["S4", "S3"]
+    assert [s.stop_id for s in feed.stops_by_code("1001")] == ["S1"]
+    assert feed.stops_by_code("9999") == []
+    assert {s.stop_id for s in feed.search("2002")} == {"S3", "S4"}
+
+
 def test_search_matches_all_words_and_prefers_prefix(feed):
     names = [s.name for s in feed.search("king james")]
     assert names == ["KING at JAMES", "JAMES at KING"]

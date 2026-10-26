@@ -54,6 +54,15 @@ def test_stop_code_redirect(client):
     assert client.get("/c/9999").status_code == 404
 
 
+def test_shared_stop_code_shows_chooser(client):
+    r = client.get("/c/2002", params={"theme": "dark", "x": "//evil"})
+    assert r.status_code == 200
+    assert "Which stop 2002?" in r.text
+    assert 'href="/stop/S3?theme=dark"' in r.text
+    assert 'href="/stop/S4?theme=dark"' in r.text
+    assert "evil" not in r.text
+
+
 def test_stop_page(client):
     r = client.get("/stop/S1")
     assert r.status_code == 200

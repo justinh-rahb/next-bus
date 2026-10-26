@@ -137,3 +137,6 @@ vendor/
 .pyre/
 
 .DS_Store
+# Next Bus
+data/
+.venv/

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% set stop = board.stop %}
+{% block title %}{{ stop.name }}{% endblock %}
+{% block body_class %}page-stop{% endblock %}
+
+{% block topbar_left %}
+<a class="back-link" href="/" aria-label="All stops">
+  <svg aria-hidden="true"><use href="#i-back"/></svg>
+  <img class="brand-logo" src="{{ settings.agency_logo_url or '/static/icons/next-bus.svg' }}" alt="" width="36" height="36">
+</a>
+{% endblock %}
+
+{% block topbar_actions %}
+<span class="kiosk-clock" id="kiosk-clock" aria-hidden="true"></span>
+<button class="icon-btn fav-btn" type="button" id="fav-btn" aria-pressed="false" aria-label="Save to favourites">
+  <svg aria-hidden="true"><use href="#i-star"/></svg>
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="stop-head" id="stop"
+     data-stop-id="{{ stop.stop_id }}"
+     data-tz="{{ tz }}"
+     data-stop='{{ stop_data | tojson }}'>
+  <h1>{{ stop.name }}</h1>
+  <p class="stop-sub">
+    {% if stop.code %}Stop {{ stop.code }}{% endif %}
+    {% if stop.desc and stop.desc != stop.name %}<span class="dot">·</span> {{ stop.desc | title }}{% endif %}
+  </p>
+</div>
+
+{% if board.routes | length > 1 %}
+<div class="route-filter" id="route-filter" role="group" aria-label="Show routes">
+  <button type="button" class="chip chip-all" data-route="" aria-pressed="true">All</button>
+  {% for r in board.routes %}
+  <button type="button" class="chip" data-route="{{ r.route_id }}" aria-pressed="false"
+          {% if r.css_color %}style="--rc: {{ r.css_color }}; --rt: {{ r.css_text_color or '#fff' }}"{% endif %}
+          title="{{ r.long_name }}">{{ r.label }}</button>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div id="board" aria-live="polite">
+  {% include "_board.html" %}
+</div>
+<p class="status-msg offline-msg" id="offline-msg" role="status" hidden>Can't reach the server. Retrying…</p>
+{% endblock %}

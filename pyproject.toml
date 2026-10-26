@@ -1,0 +1,36 @@
+[project]
+name = "next-bus"
+version = "2.0.0"
+description = "Real-time bus departures from any GTFS / GTFS-Realtime feed."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "httpx>=0.28",
+    "jinja2>=3.1.6",
+    "gtfs-realtime-bindings>=1.0.0",
+    "protobuf>=6.33",
+    "tzdata",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.8",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

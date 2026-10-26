@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block body_class %}page-home{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Where are you catching the bus?</h1>
+  <form class="search" role="search" action="/" id="search-form" autocomplete="off">
+    <label class="visually-hidden" for="search">Stop name or number</label>
+    <svg class="search-icon" aria-hidden="true"><use href="#i-search"/></svg>
+    <input id="search" name="q" type="search" inputmode="search" enterkeyhint="go"
+           placeholder="Stop name or number on the sign"
+           role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list">
+  </form>
+  <ul id="results" class="stop-list results" role="listbox" hidden></ul>
+  <button type="button" class="pill-btn" id="nearby-btn">
+    <svg aria-hidden="true"><use href="#i-locate"/></svg> Stops near me
+  </button>
+  <p class="status-msg" id="nearby-status" role="status" hidden></p>
+  <ul id="nearby" class="stop-list" hidden></ul>
+</section>
+
+<section class="saved" id="favourites-section" hidden>
+  <h2>Favourites</h2>
+  <ul id="favourites" class="stop-list"></ul>
+</section>
+
+<section class="saved" id="recents-section" hidden>
+  <div class="section-head">
+    <h2>Recent</h2>
+    <button type="button" class="text-btn" id="clear-recents">Clear</button>
+  </div>
+  <ul id="recents" class="stop-list"></ul>
+</section>
+
+<noscript><p class="status-msg">Search needs JavaScript. You can still open a stop directly at <code>/stop/&lt;stop id&gt;</code> or <code>/c/&lt;stop number&gt;</code>.</p></noscript>
+{% endblock %}

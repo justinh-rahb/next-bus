@@ -1,0 +1,6 @@
+stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station
+S1,1001,KING at JAMES,King St & James St,43.2570,-79.8690,0,
+S2,1002,JAMES at KING,James St & King St,43.2572,-79.8688,0,
+S3,2002,MAIN at JAMES,Main St & James St,43.2550,-79.8700,0,
+ST1,,CENTRAL STATION,,43.2560,-79.8695,1,
+S4,2002,BAY at YORK,Bay St & York Blvd,43.2650,-79.8800,0,

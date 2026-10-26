@@ -1,0 +1,87 @@
+<div class="board" data-now="{{ board.now }}">
+  {% macro alert_body(alert) %}
+    {% if alert.description %}<p class="alert-body">{{ alert.description }}</p>{% endif %}
+    {% if alert.url %}<p class="alert-body"><a href="{{ alert.url }}" rel="noopener">More info</a></p>{% endif %}
+  {% endmacro %}
+  {# Alerts about this stop are shown one by one; route-wide ones are folded together. #}
+  {% set wider = board.alerts | rejectattr(1, "equalto", "stop") | list %}
+  {% for alert, scope in board.alerts if scope == "stop" %}
+  <details class="alert alert-stop" data-alert="{{ alert.alert_id }}">
+    <summary>
+      <svg aria-hidden="true"><use href="#i-alert"/></svg>
+      <span>{{ alert.header or alert.effect | capitalize or "Service alert" }}</span>
+    </summary>
+    {{ alert_body(alert) }}
+  </details>
+  {% endfor %}
+  {% if wider %}
+  <details class="alert alert-route" data-alert="routes">
+    <summary>
+      <svg aria-hidden="true"><use href="#i-alert"/></svg>
+      <span>{{ wider | length }} service alert{{ "s" if wider | length > 1 }} on routes serving this stop</span>
+    </summary>
+    {% for alert, scope in wider %}
+    <details class="alert-item" data-alert="{{ alert.alert_id }}">
+      <summary>{{ alert.header or alert.effect | capitalize or "Service alert" }}</summary>
+      {{ alert_body(alert) }}
+    </details>
+    {% endfor %}
+  </details>
+  {% endif %}
+
+  {% if board.departures %}
+  <ol class="departures">
+    {% for d in board.departures %}
+    {% set late = d.delay_minutes or 0 %}
+    <li class="dep dep-{{ d.status }}" data-route="{{ d.route.route_id }}" data-time="{{ d.time }}" data-clock="{{ clock(d.time) }}">
+      <span class="route-badge"
+            {% if d.route.css_color %}style="--rc: {{ d.route.css_color }}; --rt: {{ d.route.css_text_color or '#fff' }}"{% endif %}
+            title="{{ d.route.long_name }}">{{ d.badge }}</span>
+      <div class="dep-info">
+        <div class="headsign">{{ d.headsign or d.route.long_name }}</div>
+        <div class="dep-meta">
+          {% if d.status == "cancelled" %}
+            <span class="tag tag-bad">Cancelled</span>
+          {% elif d.status == "skipped" %}
+            <span class="tag tag-bad">Not stopping here</span>
+          {% elif d.is_live %}
+            <span class="live" title="Live GPS prediction"><span class="pulse" aria-hidden="true"></span>Live</span>
+            {% if late >= 2 %}<span class="late">{{ late }} min late</span>
+            {% elif late <= -2 %}<span class="early">{{ -late }} min early</span>
+            {% else %}<span>On time</span>{% endif %}
+            {% if d.stops_away is not none %}
+              <span class="dot">·</span>
+              <span>{% if d.stops_away == 0 %}At stop{% elif d.stops_away == 1 %}1 stop away{% else %}{{ d.stops_away }} stops away{% endif %}</span>
+            {% endif %}
+          {% else %}
+            <span class="sched">Scheduled</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="dep-when">
+        {% set cd = countdown(d.time, board.now) %}
+        {% if d.is_cancelled %}
+          <div class="countdown"><s>{{ clock(d.scheduled) }}</s></div>
+        {% else %}
+          <div class="countdown{% if not d.is_live %} is-sched{% endif %}" data-countdown>{{ cd or clock(d.time) }}</div>
+          <div class="clock" data-clock-line {% if not cd %}hidden{% endif %}>
+            {{ clock(d.time) }}
+          </div>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="empty">No departures {% if request.query_params.get("route") %}on the selected routes {% endif %}in the next {{ settings.horizon_minutes // 60 }} hours.</p>
+  {% endif %}
+
+  <p class="board-foot">
+    {% if board.realtime %}
+      <span class="live"><span class="pulse" aria-hidden="true"></span>Live tracking on</span>
+    {% else %}
+      <span class="warn">Live tracking unavailable. Showing scheduled times.</span>
+    {% endif %}
+    <span class="dot">·</span> Updated {{ clock(board.now) }}
+  </p>
+</div>

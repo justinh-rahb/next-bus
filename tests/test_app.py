@@ -32,6 +32,14 @@ def test_legacy_stop_links_redirect(client):
     assert client.get("/next-bus?stop_id=S1").headers["location"] == "/stop/S1"
 
 
+def test_legacy_redirects_cannot_leave_the_stop_path(client):
+    for evil in ("//evil.example", "../admin", "x?y=1#z", "https://evil.example"):
+        location = client.get("/", params={"stop_id": evil}).headers["location"]
+        assert location.startswith("/stop/")
+        assert "/" not in location.removeprefix("/stop/")
+        assert client.get("/next-bus", params={"stop_id": evil}).headers["location"] == location
+
+
 def test_stop_code_redirect(client):
     r = client.get("/c/1001")
     assert r.status_code == 302

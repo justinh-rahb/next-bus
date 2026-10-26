@@ -11,7 +11,7 @@ import time
 from collections.abc import AsyncIterator
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -151,6 +151,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             only_routes=set(filter(None, request.query_params.get("route", "").split(","))),
         )
 
+    def stop_url(stop_id: str, params: dict[str, str] | None = None) -> str:
+        """Same-origin link to a stop page. The ID is fully escaped so it can't change the path."""
+        query = f"?{urlencode(params)}" if params else ""
+        return f"/stop/{quote(stop_id, safe='')}{query}"
+
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException):
         if request.url.path.startswith("/api/"):
@@ -162,21 +167,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if stop_id:
             # Links from the original app used /?stop_id=…
             params = {k: v for k, v in request.query_params.items() if k != "stop_id"}
-            url = f"/stop/{stop_id}" + (f"?{urlencode(params)}" if params else "")
-            return RedirectResponse(url, status_code=301)
+            return RedirectResponse(stop_url(stop_id, params), status_code=301)
         return render(request, "home.html")
 
     @app.get("/next-bus")
     async def legacy_next_bus(stop_id: str = ""):
-        return RedirectResponse(f"/stop/{stop_id}" if stop_id else "/", status_code=301)
+        return RedirectResponse(stop_url(stop_id) if stop_id else "/", status_code=301)
 
     @app.get("/c/{code}")
     async def stop_by_code(request: Request, code: str):
         stop = feed_of(request).stop_by_code(code)
         if stop is None:
             raise HTTPException(404, f"No stop with code {code}")
-        query = f"?{request.url.query}" if request.url.query else ""
-        return RedirectResponse(f"/stop/{stop.stop_id}{query}", status_code=302)
+        return RedirectResponse(stop_url(stop.stop_id, dict(request.query_params)), status_code=302)
 
     @app.get("/stop/{stop_id}", response_class=HTMLResponse)
     async def stop_page(request: Request, stop_id: str):

@@ -21,7 +21,7 @@ from fastapi.templating import Jinja2Templates
 
 from .arrivals import Board, Departure, build_board
 from .config import Settings
-from .gtfs_static import StaticFeed, StaticFeedManager
+from .gtfs_static import StaticFeed, StaticFeedManager, Stop
 from .realtime import RealtimePoller
 
 log = logging.getLogger("nextbus")
@@ -151,10 +151,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             only_routes=set(filter(None, request.query_params.get("route", "").split(","))),
         )
 
-    def stop_url(stop_id: str, params: dict[str, str] | None = None) -> str:
-        """Same-origin link to a stop page. The ID is fully escaped so it can't change the path."""
+    def redirect_to_stop(request: Request, stop: Stop | None, status_code: int) -> Response:
+        """Redirect to a stop page built only from known values, never raw query input.
+
+        The stop must exist in the feed, and only the stop page's own options are carried
+        over: theme and kiosk become fixed strings, routes are kept if they serve the stop.
+        """
+        if stop is None:
+            raise HTTPException(404, "Unknown stop")
+        params: dict[str, str] = {}
+        q = request.query_params
+        if q.get("theme") in ("light", "dark"):
+            params["theme"] = "dark" if q["theme"] == "dark" else "light"
+        if q.get("kiosk") in ("1", "true", "yes"):
+            params["kiosk"] = "1"
+        wanted = set(q.get("route", "").split(","))
+        routes = [r.route_id for r in feed_of(request).routes_for_stop(stop.stop_id)]
+        if kept := [r for r in routes if r in wanted]:
+            params["route"] = ",".join(kept)
         query = f"?{urlencode(params)}" if params else ""
-        return f"/stop/{quote(stop_id, safe='')}{query}"
+        return RedirectResponse(f"/stop/{quote(stop.stop_id, safe='')}{query}", status_code)
 
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException):
@@ -166,20 +182,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def home(request: Request, stop_id: str | None = None):
         if stop_id:
             # Links from the original app used /?stop_id=…
-            params = {k: v for k, v in request.query_params.items() if k != "stop_id"}
-            return RedirectResponse(stop_url(stop_id, params), status_code=301)
+            return redirect_to_stop(request, feed_of(request).stop(stop_id), 301)
         return render(request, "home.html")
 
     @app.get("/next-bus")
-    async def legacy_next_bus(stop_id: str = ""):
-        return RedirectResponse(stop_url(stop_id) if stop_id else "/", status_code=301)
+    async def legacy_next_bus(request: Request, stop_id: str = ""):
+        if not stop_id:
+            return RedirectResponse("/", status_code=301)
+        return redirect_to_stop(request, feed_of(request).stop(stop_id), 301)
 
     @app.get("/c/{code}")
     async def stop_by_code(request: Request, code: str):
-        stop = feed_of(request).stop_by_code(code)
-        if stop is None:
-            raise HTTPException(404, f"No stop with code {code}")
-        return RedirectResponse(stop_url(stop.stop_id, dict(request.query_params)), status_code=302)
+        return redirect_to_stop(request, feed_of(request).stop_by_code(code), 302)
 
     @app.get("/stop/{stop_id}", response_class=HTMLResponse)
     async def stop_page(request: Request, stop_id: str):

@@ -32,12 +32,19 @@ def test_legacy_stop_links_redirect(client):
     assert client.get("/next-bus?stop_id=S1").headers["location"] == "/stop/S1"
 
 
-def test_legacy_redirects_cannot_leave_the_stop_path(client):
-    for evil in ("//evil.example", "../admin", "x?y=1#z", "https://evil.example"):
-        location = client.get("/", params={"stop_id": evil}).headers["location"]
-        assert location.startswith("/stop/")
-        assert "/" not in location.removeprefix("/stop/")
-        assert client.get("/next-bus", params={"stop_id": evil}).headers["location"] == location
+def test_legacy_redirects_only_go_to_known_stops(client):
+    for evil in ("//evil.example", "../admin", "https://evil.example"):
+        assert client.get("/", params={"stop_id": evil}).status_code == 404
+        assert client.get("/next-bus", params={"stop_id": evil}).status_code == 404
+
+
+def test_redirects_keep_only_known_options(client):
+    r = client.get(
+        "/", params={"stop_id": "S1", "theme": "dark", "kiosk": "1", "route": "R5,R9", "x": "//e"}
+    )
+    assert r.headers["location"] == "/stop/S1?theme=dark&kiosk=1&route=R5"
+    r = client.get("/c/1001", params={"theme": "//evil", "route": "R1"})
+    assert r.headers["location"] == "/stop/S1?route=R1"
 
 
 def test_stop_code_redirect(client):

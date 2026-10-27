@@ -376,6 +376,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "service_dates": (
                 [str(static.feed.first_day), str(static.feed.last_day)] if static.feed else None
             ),
+            "next_schedule": (
+                {
+                    "version": static.pending.meta.get("feed_version"),
+                    "starts": str(static.pending.first_day),
+                }
+                if static.pending
+                else None
+            ),
             "realtime_fresh": poller.is_fresh(snapshot),
             "realtime_feed_time": snapshot.feed_time,
         }

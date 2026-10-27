@@ -76,7 +76,7 @@ All settings are environment variables and all are optional. The defaults point 
 
 For another agency, setting `GTFS_STATIC_URL` and `GTFS_REALTIME_URL` is usually enough. If the trip updates URL contains `TripUpdates`, the vehicle positions and alerts feeds are assumed to sit next to it (`…VehiclePositions…`, `…ServiceAlerts…`). Otherwise set them explicitly.
 
-If the agency's schedule file doesn't cover today (some publish next season's timetable early), the logs warn and stop pages say when the schedule starts or ended.
+Some agencies publish next season's timetable early, in place of the current one. When a downloaded schedule hasn't started yet and the current one still covers today, the app keeps using the current one and switches on the new schedule's first service day; `/healthz` shows it under `next_schedule`. This needs `/app/data` on a persistent volume to survive restarts. If no schedule covers today, the logs warn and stop pages say when the schedule starts or ended.
 
 ## Deploying
 

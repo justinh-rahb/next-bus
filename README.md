@@ -5,12 +5,12 @@ Live bus departures for any stop, built on an agency's open GTFS and GTFS-Realti
 ## Features
 
 - **Find a stop** by name ("king james") or by the number on the stop sign, or list the stops near you.
-- **Favourites and recent stops** are saved in your browser, with no account needed.
+- **Favourites and recent stops** are saved in your browser, with no account needed. Each favourite shows its next three buses, updated live.
 - **Live predictions** come from GTFS-Realtime and show how late or early the bus is and how many stops away it is. Cancelled trips and skipped stops are marked.
 - **Correct schedules**: the service calendar is applied (weekday, weekend and holiday service), trips that run past midnight are handled, and a bus that already has a live prediction isn't listed a second time as scheduled.
 - **Service alerts** for the stop and the routes that serve it.
 - **Route filter**: tap route chips to show only the buses you care about. The filter is kept in the URL, so it can be bookmarked.
-- **Kiosk mode** (`?kiosk=1`) is a large, auto-refreshing board for wall-mounted screens.
+- **Kiosk mode** (`?kiosk=1`) is a large, auto-refreshing board for wall-mounted screens, with a clock and the current weather at the stop.
 - **Installable** as a home-screen app, with light and dark themes. It works without any CDN.
 
 ## URLs
@@ -24,6 +24,7 @@ Live bus departures for any stop, built on an agency's open GTFS and GTFS-Realti
 | `/api/search?q=` | Stop search (JSON) |
 | `/api/nearby?lat=&lon=` | Stops within 800 m (JSON) |
 | `/api/stops/<stop_id>/departures` | Departures, alerts and realtime status (JSON) |
+| `/api/next?stops=<id>,<id>` | Next few departures for up to 20 stops (JSON) |
 | `/api/docs` | Interactive API docs |
 | `/healthz` | 200 once the schedule is loaded |
 
@@ -31,6 +32,7 @@ Live bus departures for any stop, built on an agency's open GTFS and GTFS-Realti
 
 - **Static schedule.** On startup, the GTFS zip is downloaded and indexed into SQLite under `DATA_DIR` (about 3 seconds for HSR). The app checks for a new feed every few hours using `ETag`/`If-Modified-Since`, rebuilds in the background when it changes, and swaps the new index in without downtime.
 - **Realtime.** Trip updates, vehicle positions and alerts are fetched together every 20 seconds and shared across all requests. Polling stops when nobody has looked at a stop for 5 minutes. If the agency's feed is slow or down, the board falls back to scheduled times and says so.
+- **Weather.** Kiosk weather comes from [Open-Meteo](https://open-meteo.com/), which needs no API key. The server fetches it and caches it for 10 minutes per square kilometre, so many screens share one request.
 - **Frontend.** Pages are rendered on the server. A small script (`nextbus/static/app.js`) refreshes the board, counts down every second, and handles search and favourites.
 
 ## Running locally
@@ -59,6 +61,7 @@ All settings are environment variables and all are optional. The defaults point 
 | `GTFS_TRIP_UPDATES_URL` | HSR trip updates | `GTFS_REALTIME_URL` is also accepted. Set it empty to disable realtime |
 | `GTFS_VEHICLE_POSITIONS_URL` | HSR vehicle positions | Set it empty to disable |
 | `GTFS_ALERTS_URL` | HSR service alerts | Set it empty to disable |
+| `WEATHER_URL` | Open-Meteo forecast API | Set it empty to turn off kiosk weather |
 | `AGENCY_NAME` | | Shown in the header and title |
 | `AGENCY_LOGO_URL` | Bus icon | For example `/static/icons/hsr-logo.png` |
 | `AGENCY_TIMEZONE` | From `agency.txt` | |

@@ -193,6 +193,13 @@ main { flex: 1; padding-bottom: 32px; }
 .stop-list .sub { color: var(--muted); font-size: 0.85rem; grid-column: 1; }
 .stop-list .mini-routes { grid-column: 2; grid-row: 1 / span 2; align-self: center; display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 45vw; }
 .results { margin-top: 8px; }
+
+/* Next departures under each favourite. */
+#favourites .mini-routes { display: none; }
+.stop-list .next { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 6px; }
+.next-item { display: inline-flex; align-items: center; gap: 6px; font-weight: 650; }
+.next-item.is-live .next-time { color: var(--live); }
+.next-none { color: var(--muted); font-size: 0.85rem; }
 .status-msg { color: var(--muted); margin: 12px 0 0; }
 
 /* Route badges */
@@ -294,7 +301,7 @@ main { flex: 1; padding-bottom: 32px; }
 .board-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; color: var(--muted); font-size: 0.8rem; margin: 16px 0 0; }
 .offline-msg { text-align: center; color: var(--late); }
 
-.kiosk-clock { display: none; }
+.kiosk-clock, .kiosk-weather { display: none; }
 
 @keyframes pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
@@ -311,6 +318,14 @@ main { flex: 1; padding-bottom: 32px; }
 .kiosk { font-size: clamp(16px, 2.2vw, 30px); }
 .kiosk .site-footer, .kiosk .fav-btn, .kiosk #theme-toggle, .kiosk .back-link svg { display: none; }
 .kiosk .kiosk-clock { display: block; font-size: 1.8em; font-weight: 700; }
+.kiosk .kiosk-weather { display: block; }
+.kiosk .topbar-actions { gap: 1.4em; }
+.weather { display: flex; align-items: center; gap: 0.45em; }
+.weather-icon { font-size: 1.7em; line-height: 1; }
+.weather-temp { font-size: 1.8em; font-weight: 700; }
+.weather-detail { display: flex; flex-direction: column; font-size: 0.72em; line-height: 1.25; color: var(--muted); }
+.weather-detail > span:first-child { color: var(--text); font-weight: 600; }
+.weather-credit { font-size: 0.8em; opacity: 0.7; }
 .kiosk .stop-head h1 { font-size: 2em; }
 .kiosk .route-badge { min-width: 2.6em; height: 2.6em; font-size: 1.5em; }
 .kiosk .headsign { font-size: 1.25em; }

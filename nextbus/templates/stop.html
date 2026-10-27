@@ -11,6 +11,11 @@
 {% endblock %}
 
 {% block topbar_actions %}
+{% if kiosk %}
+<div class="kiosk-weather" id="kiosk-weather" data-src="/stop/{{ board.stop.stop_id | urlencode }}/weather">
+  {% include "_weather.html" %}
+</div>
+{% endif %}
 <span class="kiosk-clock" id="kiosk-clock" aria-hidden="true"></span>
 <button class="icon-btn fav-btn" type="button" id="fav-btn" aria-pressed="false" aria-label="Save to favourites">
   <svg aria-hidden="true"><use href="#i-star"/></svg>

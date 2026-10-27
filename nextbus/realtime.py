@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from collections.abc import Collection
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -249,9 +250,11 @@ class RealtimePoller:
         poll_seconds: int = 20,
         idle_seconds: int = 300,
         stale_seconds: int = 180,
+        guessed: Collection[str] = (),
     ):
         self.client = client
-        self.urls = (trip_updates_url, vehicle_positions_url, alerts_url)
+        self.urls = [trip_updates_url, vehicle_positions_url, alerts_url]
+        self.guessed = set(guessed)
         self.poll_seconds = poll_seconds
         self.idle_seconds = idle_seconds
         self.stale_seconds = stale_seconds
@@ -292,12 +295,33 @@ class RealtimePoller:
             self._last_attempt = time.monotonic()
             await self.refresh()
 
-    async def _fetch(self, url: str) -> bytes | None:
+    # Which setting to point people at when a guessed feed doesn't exist.
+    FEEDS = (
+        ("trip updates", "GTFS_TRIP_UPDATES_URL"),
+        ("vehicle positions", "GTFS_VEHICLE_POSITIONS_URL"),
+        ("alerts", "GTFS_ALERTS_URL"),
+    )
+
+    async def _fetch(self, index: int) -> bytes | None:
+        url = self.urls[index]
         if not url:
             return None
         try:
             response = await self.client.get(url, timeout=10)
+            if url in self.guessed and response.status_code in (404, 410):
+                # The guess was wrong, not the feed down: stop asking, and say so once.
+                name, env = self.FEEDS[index]
+                log.warning(
+                    "Guessed %s feed %s doesn't exist, so it's turned off. Set %s to enable it.",
+                    name,
+                    url,
+                    env,
+                )
+                self.urls[index] = ""
+                return None
             response.raise_for_status()
+            # A guess that works is as good as a configured URL from here on.
+            self.guessed.discard(url)
             return response.content
         except httpx.HTTPError as exc:
             log.warning("Realtime fetch failed for %s: %s", url, exc)
@@ -305,7 +329,7 @@ class RealtimePoller:
 
     async def refresh(self) -> None:
         trips_raw, vehicles_raw, alerts_raw = await asyncio.gather(
-            *(self._fetch(url) for url in self.urls)
+            *(self._fetch(i) for i in range(len(self.urls)))
         )
         old = self.snapshot
 

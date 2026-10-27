@@ -143,8 +143,19 @@ def test_split_headsign():
     route = Route("R1", "01", "KING", "", "")
     assert split_headsign("1A - WEST LOOP", route) == ("1A", "WEST LOOP")
     assert split_headsign("01 - NIGHT OWL", route) == ("1", "NIGHT OWL")
+    assert split_headsign("1f - VIA FERRIE", route) == ("1f", "VIA FERRIE")
     assert split_headsign("WEST LOOP", route) == ("1", "WEST LOOP")
     assert split_headsign("10 - ELSEWHERE", route) == ("1", "10 - ELSEWHERE")
+
+
+def test_split_headsign_with_direction_prefix():
+    route = Route("R31", "31", "OGDEN", "", "")
+    assert split_headsign("31 N Ogden To Dixie Go", route) == ("31", "N Ogden To Dixie Go")
+    assert split_headsign("31 SB Ogden", route) == ("31", "SB Ogden")
+    # A number that's part of the destination's name is left alone.
+    five = Route("R5", "5", "", "", "")
+    assert split_headsign("5 Points Mall", five) == ("5", "5 Points Mall")
+    assert split_headsign("5 North Loop", five) == ("5", "5 North Loop")
 
 
 def make_alert(*entities, periods=()):

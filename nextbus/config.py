@@ -52,6 +52,10 @@ class Settings:
     max_arrivals: int = 10
     horizon_minutes: int = 180
 
+    # Realtime feed URLs that were guessed rather than configured. The poller turns these
+    # off if they turn out not to exist.
+    guessed_feeds: frozenset[str] = frozenset()
+
     @classmethod
     def from_env(cls) -> Settings:
         d = cls()
@@ -60,17 +64,27 @@ class Settings:
         # The HSR vehicle and alert feeds are only the default for the HSR trip feed; for
         # another agency, look next to its trip updates feed instead.
         hsr = trip_updates == d.trip_updates_url
+        guessed = set()
+
+        def feed_url(env: str, hsr_default: str, sibling: str) -> str:
+            if env in os.environ:
+                return _str(env)
+            if hsr:
+                return hsr_default
+            url = _sibling_feed(trip_updates, sibling)
+            if url:
+                guessed.add(url)
+            return url
+
+        vehicle_positions = feed_url(
+            "GTFS_VEHICLE_POSITIONS_URL", d.vehicle_positions_url, "VehiclePositions"
+        )
+        alerts = feed_url("GTFS_ALERTS_URL", d.alerts_url, "ServiceAlerts")
         return cls(
             static_url=_str("GTFS_STATIC_URL", d.static_url),
             trip_updates_url=trip_updates,
-            vehicle_positions_url=_str(
-                "GTFS_VEHICLE_POSITIONS_URL",
-                d.vehicle_positions_url if hsr else _sibling_feed(trip_updates, "VehiclePositions"),
-            ),
-            alerts_url=_str(
-                "GTFS_ALERTS_URL",
-                d.alerts_url if hsr else _sibling_feed(trip_updates, "ServiceAlerts"),
-            ),
+            vehicle_positions_url=vehicle_positions,
+            alerts_url=alerts,
             weather_url=_str("WEATHER_URL", d.weather_url),
             agency_name=_str("AGENCY_NAME"),
             agency_logo_url=_str("AGENCY_LOGO_URL"),
@@ -82,4 +96,5 @@ class Settings:
             static_refresh_hours=_int("STATIC_REFRESH_HOURS", d.static_refresh_hours),
             max_arrivals=_int("MAX_ARRIVALS", d.max_arrivals),
             horizon_minutes=_int("HORIZON_MINUTES", d.horizon_minutes),
+            guessed_feeds=frozenset(guessed),
         )

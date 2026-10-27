@@ -20,9 +20,14 @@ MAX_STOPS_AWAY = 25
 def split_headsign(headsign: str, route: Route) -> tuple[str, str]:
     """Pull a leading route or branch number off a headsign.
 
-    '5A - MEADOWLANDS TERMINAL' on route 5 -> ('5A', 'MEADOWLANDS TERMINAL').
+    '5A - MEADOWLANDS TERMINAL' on route 5 -> ('5A', 'MEADOWLANDS TERMINAL') (HSR).
+    '31 N Ogden To Dixie Go' on route 31 -> ('31', 'N Ogden To Dixie Go') (MiWay).
     """
-    match = re.match(rf"^\s*0*({re.escape(route.label)}[A-Z]?)\s*[-–:]\s*(.+)$", headsign)
+    number = rf"^\s*0*({re.escape(route.label)}[A-Za-z]?)"
+    # "5A - …" or "5A: …"
+    match = re.match(rf"{number}\s*[-–:]\s*(.+)$", headsign)
+    # "31 N …": only before a compass direction, so "5 Points Mall" stays whole.
+    match = match or re.match(rf"{number}\s+((?:[NSEW]B?)\s+.+)$", headsign)
     if match:
         return match[1], match[2]
     return route.label, headsign

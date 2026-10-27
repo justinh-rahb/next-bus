@@ -59,8 +59,8 @@ All settings are environment variables and all are optional. The defaults point 
 | --- | --- | --- |
 | `GTFS_STATIC_URL` | HSR `google_transit.zip` | URL or local path to a GTFS zip |
 | `GTFS_TRIP_UPDATES_URL` | HSR trip updates | `GTFS_REALTIME_URL` is also accepted. Set it empty to disable realtime |
-| `GTFS_VEHICLE_POSITIONS_URL` | HSR vehicle positions | Set it empty to disable |
-| `GTFS_ALERTS_URL` | HSR service alerts | Set it empty to disable |
+| `GTFS_VEHICLE_POSITIONS_URL` | Next to the trip updates feed | Set it empty to disable |
+| `GTFS_ALERTS_URL` | Next to the trip updates feed | Set it empty to disable |
 | `WEATHER_URL` | Open-Meteo forecast API | Set it empty to turn off kiosk weather |
 | `AGENCY_NAME` | | Shown in the header and title |
 | `AGENCY_LOGO_URL` | Bus icon | For example `/static/icons/hsr-logo.png` |
@@ -73,6 +73,10 @@ All settings are environment variables and all are optional. The defaults point 
 | `REALTIME_STALE_SECONDS` | `180` | Realtime data older than this is ignored |
 | `STATIC_REFRESH_HOURS` | `6` | |
 | `LOG_LEVEL` | `INFO` | |
+
+For another agency, setting `GTFS_STATIC_URL` and `GTFS_REALTIME_URL` is usually enough. If the trip updates URL contains `TripUpdates`, the vehicle positions and alerts feeds are assumed to sit next to it (`…VehiclePositions…`, `…ServiceAlerts…`). Otherwise set them explicitly.
+
+Some agencies publish next season's timetable early, in place of the current one. When a downloaded schedule hasn't started yet and the current one still covers today, the app keeps using the current one and switches on the new schedule's first service day; `/healthz` shows it under `next_schedule`. This needs `/app/data` on a persistent volume to survive restarts. If no schedule covers today, the logs warn and stop pages say when the schedule starts or ended.
 
 ## Deploying
 

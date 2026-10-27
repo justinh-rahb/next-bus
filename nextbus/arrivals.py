@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import date, datetime
 
 from .gtfs_static import Route, StaticFeed, Stop
 from .realtime import Alert, Prediction, Snapshot
@@ -69,6 +70,10 @@ class Board:
     alerts: list[tuple[Alert, str]]
     realtime: bool
     now: int
+    # Set when the static schedule has no service today, e.g. the agency has only
+    # published its next timetable.
+    schedule_starts: date | None = None
+    schedule_ended: date | None = None
 
 
 def build_board(
@@ -145,6 +150,10 @@ def build_board(
     ]
     alerts.sort(key=lambda pair: scopes[pair[1]])
 
+    today = datetime.fromtimestamp(now, feed.tz).date()
+    starts = feed.first_day if feed.first_day and today < feed.first_day else None
+    ended = feed.last_day if feed.last_day and today > feed.last_day else None
+
     return Board(
         stop=stop,
         routes=routes,
@@ -152,4 +161,6 @@ def build_board(
         alerts=alerts,
         realtime=realtime,
         now=now,
+        schedule_starts=starts,
+        schedule_ended=ended,
     )

@@ -255,6 +255,22 @@ class StaticFeed:
         self.tz = ZoneInfo(timezone or self.meta.get("timezone") or "America/Toronto")
         self.routes = {r[0]: Route(*r) for r in self._query("SELECT * FROM routes")}
         self._services: dict[date, frozenset[str]] = {}
+        self.first_day, self.last_day = self._service_range()
+
+    def _service_range(self) -> tuple[date | None, date | None]:
+        """First and last day the feed has any service on."""
+        ((start, end),) = self._query(
+            "SELECT MIN(d), MAX(e) FROM ("
+            " SELECT start_date AS d, end_date AS e FROM calendar"
+            " UNION ALL SELECT date, date FROM calendar_dates WHERE exception_type = 1)"
+        )
+        parse = lambda v: datetime.strptime(v, "%Y%m%d").date() if v else None  # noqa: E731
+        return parse(start), parse(end)
+
+    def covers(self, day: date) -> bool:
+        if self.first_day is None or self.last_day is None:
+            return True
+        return self.first_day <= day <= self.last_day
 
     def _query(self, sql: str, params: Iterable = ()) -> list[tuple]:
         # A connection per query keeps this safe across threads; opening one is cheap.
@@ -390,44 +406,82 @@ def haversine_m(lat1: float, lon1: float, lat2: float | None, lon2: float | None
 
 
 class StaticFeedManager:
-    """Keeps the current StaticFeed and replaces it when the upstream zip changes."""
+    """Keeps the current StaticFeed and replaces it when the upstream zip changes.
+
+    Agencies sometimes publish next season's timetable early, in place of the current one.
+    A download with no service today is held as `pending` while the current feed still
+    covers today, and takes over on its first service day. Both survive restarts.
+    """
 
     def __init__(self, url: str, data_dir: Path, timezone: str = ""):
         self.url = url
         self.data_dir = data_dir
         self.timezone = timezone
-        self.feed: StaticFeed | None = None
+        self.pending: StaticFeed | None = None
         self.checked_at: float | None = None
+        self._feed: StaticFeed | None = None
         self._state_file = data_dir / "current.json"
 
+    def today(self, feed: StaticFeed) -> date:
+        return datetime.now(feed.tz).date()
+
+    @property
+    def feed(self) -> StaticFeed | None:
+        """The schedule to use now, switching to the pending one once it has started."""
+        pending = self.pending
+        if pending is not None and pending.first_day and self.today(pending) >= pending.first_day:
+            log.info(
+                "Switching to static GTFS %s, which starts %s",
+                pending.meta.get("feed_version", ""),
+                pending.first_day,
+            )
+            self._feed, self.pending = pending, None
+            self._save_state()
+        return self._feed
+
+    def _save_state(self) -> None:
+        if self._feed is None:
+            return
+        state = {"url": self.url, "file": self._feed.path.name}
+        if self.pending is not None:
+            state["pending"] = self.pending.path.name
+        self._state_file.write_text(json.dumps(state))
+
     def load_cached(self) -> bool:
-        """Use an index left by a previous run, if it was built from the same URL."""
+        """Use indexes left by a previous run, if they were built from the same URL."""
         try:
             state = json.loads(self._state_file.read_text())
             path = self.data_dir / state["file"]
-            if state.get("url") == self.url and path.exists():
-                self.feed = StaticFeed(path, self.timezone)
-                log.info("Using cached static GTFS %s", self.feed.meta.get("feed_version", ""))
-                return True
+            if state.get("url") != self.url or not path.exists():
+                return False
+            self._feed = StaticFeed(path, self.timezone)
+            pending = self.data_dir / state.get("pending", "")
+            if state.get("pending") and pending.exists():
+                self.pending = StaticFeed(pending, self.timezone)
+            log.info("Using cached static GTFS %s", self._feed.meta.get("feed_version", ""))
+            self.warn_if_out_of_range()
+            return True
         except (OSError, ValueError, KeyError, sqlite3.Error) as exc:
             log.info("No usable static GTFS cache: %s", exc)
         return False
 
     async def refresh(self, client: httpx.AsyncClient) -> bool:
-        """Download the feed if it changed and swap in a new index. True if replaced."""
+        """Download the feed if it changed and index it. True if a new index was built."""
         self.checked_at = time.time()
-        meta = self.feed.meta if self.feed else {}
+        # Compare against the newest download, which may be the pending one.
+        latest = self.pending or self._feed
+        meta = latest.meta if latest else {}
         if "://" not in self.url or self.url.startswith("file://"):
             local = Path(self.url.removeprefix("file://"))
             content = local.read_bytes()
             etag, modified = str(local.stat().st_mtime_ns), ""
-            if self.feed and meta.get("etag") == etag:
+            if latest and meta.get("etag") == etag:
                 return False
         else:
             headers = {}
-            if self.feed and meta.get("etag"):
+            if latest and meta.get("etag"):
                 headers["If-None-Match"] = meta["etag"]
-            if self.feed and meta.get("last_modified"):
+            if latest and meta.get("last_modified"):
                 headers["If-Modified-Since"] = meta["last_modified"]
             response = await client.get(self.url, headers=headers, timeout=120)
             if response.status_code == 304:
@@ -438,20 +492,52 @@ class StaticFeedManager:
             modified = response.headers.get("last-modified", "")
 
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        name = f"gtfs-{int(time.time())}.sqlite"
-        path = self.data_dir / name
+        path = self.data_dir / f"gtfs-{time.time_ns()}.sqlite"
         await asyncio.to_thread(
             build_index,
             content,
             path,
             {"url": self.url, "etag": etag, "last_modified": modified},
         )
-        old = self.feed
-        self.feed = StaticFeed(path, self.timezone)
-        self._state_file.write_text(json.dumps({"url": self.url, "file": name}))
-        # Keep the previous index for requests that are still using it.
+        new = StaticFeed(path, self.timezone)
+        current = self.feed
+        previous = self._feed
+        today = self.today(new)
+        if (
+            current is not None
+            and current.covers(today)
+            and new.first_day is not None
+            and new.first_day > today
+        ):
+            self.pending = new
+            log.info(
+                "Static GTFS %s starts %s; keeping the current schedule until then",
+                new.meta.get("feed_version", ""),
+                new.first_day,
+            )
+        else:
+            self._feed, self.pending = new, None
+            log.info("Loaded static GTFS %s", new.meta.get("feed_version", ""))
+        self._save_state()
+        # Keep the active and pending indexes, plus the one just replaced for requests
+        # that are still using it.
+        keep = {f.path for f in (self._feed, self.pending, previous) if f is not None}
         for stale in self.data_dir.glob("gtfs-*.sqlite"):
-            if stale != path and (old is None or stale != old.path):
+            if stale not in keep:
                 stale.unlink(missing_ok=True)
-        log.info("Loaded static GTFS %s", self.feed.meta.get("feed_version", ""))
+        self.warn_if_out_of_range()
         return True
+
+    def warn_if_out_of_range(self) -> None:
+        feed = self.feed
+        if feed is None:
+            return
+        today = self.today(feed)
+        if not feed.covers(today):
+            log.warning(
+                "Static GTFS only has service from %s to %s, not today (%s). Boards will be"
+                " empty until the agency publishes a schedule that covers today.",
+                feed.first_day,
+                feed.last_day,
+                today,
+            )

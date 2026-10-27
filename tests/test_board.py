@@ -179,3 +179,13 @@ def test_board_includes_relevant_alerts(feed):
     alerts = parse_alerts(raw.SerializeToString())
     result = board(feed, Snapshot(alerts=alerts)).alerts
     assert [(alert.header, scope) for alert, scope in result] == [("Stop closed", "stop")]
+
+
+def test_board_explains_when_schedule_does_not_cover_today(feed):
+    assert (feed.first_day.isoformat(), feed.last_day.isoformat()) == ("2026-01-01", "2026-12-31")
+    assert board(feed).schedule_starts is None
+    later = board(feed, now=local_ts(2027, 1, 4, 8, 0))
+    assert later.departures == []
+    assert later.schedule_ended.isoformat() == "2026-12-31"
+    earlier = board(feed, now=local_ts(2025, 12, 1, 8, 0))
+    assert earlier.schedule_starts.isoformat() == "2026-01-01"

@@ -255,6 +255,22 @@ class StaticFeed:
         self.tz = ZoneInfo(timezone or self.meta.get("timezone") or "America/Toronto")
         self.routes = {r[0]: Route(*r) for r in self._query("SELECT * FROM routes")}
         self._services: dict[date, frozenset[str]] = {}
+        self.first_day, self.last_day = self._service_range()
+
+    def _service_range(self) -> tuple[date | None, date | None]:
+        """First and last day the feed has any service on."""
+        ((start, end),) = self._query(
+            "SELECT MIN(d), MAX(e) FROM ("
+            " SELECT start_date AS d, end_date AS e FROM calendar"
+            " UNION ALL SELECT date, date FROM calendar_dates WHERE exception_type = 1)"
+        )
+        parse = lambda v: datetime.strptime(v, "%Y%m%d").date() if v else None  # noqa: E731
+        return parse(start), parse(end)
+
+    def covers(self, day: date) -> bool:
+        if self.first_day is None or self.last_day is None:
+            return True
+        return self.first_day <= day <= self.last_day
 
     def _query(self, sql: str, params: Iterable = ()) -> list[tuple]:
         # A connection per query keeps this safe across threads; opening one is cheap.
@@ -408,6 +424,7 @@ class StaticFeedManager:
             if state.get("url") == self.url and path.exists():
                 self.feed = StaticFeed(path, self.timezone)
                 log.info("Using cached static GTFS %s", self.feed.meta.get("feed_version", ""))
+                self.warn_if_out_of_range()
                 return True
         except (OSError, ValueError, KeyError, sqlite3.Error) as exc:
             log.info("No usable static GTFS cache: %s", exc)
@@ -454,4 +471,17 @@ class StaticFeedManager:
             if stale != path and (old is None or stale != old.path):
                 stale.unlink(missing_ok=True)
         log.info("Loaded static GTFS %s", self.feed.meta.get("feed_version", ""))
+        self.warn_if_out_of_range()
         return True
+
+    def warn_if_out_of_range(self) -> None:
+        feed = self.feed
+        today = datetime.now(feed.tz).date() if feed else None
+        if feed and not feed.covers(today):
+            log.warning(
+                "Static GTFS only has service from %s to %s, not today (%s). Boards will be"
+                " empty until the agency publishes a schedule that covers today.",
+                feed.first_day,
+                feed.last_day,
+                today,
+            )

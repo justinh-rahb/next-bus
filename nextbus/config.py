@@ -18,6 +18,13 @@ def _str(name: str, default: str = "") -> str:
     return os.environ.get(name, default).strip()
 
 
+def _sibling_feed(trip_updates_url: str, name: str) -> str:
+    """Guess a sibling realtime feed, e.g. GTFS_TripUpdates.pb -> GTFS_VehiclePositions.pb."""
+    return (
+        trip_updates_url.replace("TripUpdates", name) if "TripUpdates" in trip_updates_url else ""
+    )
+
+
 @dataclass(frozen=True)
 class Settings:
     static_url: str = "https://opendata.hamilton.ca/GTFS-Static/google_transit.zip"
@@ -48,14 +55,22 @@ class Settings:
     @classmethod
     def from_env(cls) -> Settings:
         d = cls()
+        # GTFS_REALTIME_URL is the name the original app used for trip updates.
+        trip_updates = _str("GTFS_TRIP_UPDATES_URL", _str("GTFS_REALTIME_URL", d.trip_updates_url))
+        # The HSR vehicle and alert feeds are only the default for the HSR trip feed; for
+        # another agency, look next to its trip updates feed instead.
+        hsr = trip_updates == d.trip_updates_url
         return cls(
             static_url=_str("GTFS_STATIC_URL", d.static_url),
-            # GTFS_REALTIME_URL is the name the original app used for trip updates.
-            trip_updates_url=_str(
-                "GTFS_TRIP_UPDATES_URL", _str("GTFS_REALTIME_URL", d.trip_updates_url)
+            trip_updates_url=trip_updates,
+            vehicle_positions_url=_str(
+                "GTFS_VEHICLE_POSITIONS_URL",
+                d.vehicle_positions_url if hsr else _sibling_feed(trip_updates, "VehiclePositions"),
             ),
-            vehicle_positions_url=_str("GTFS_VEHICLE_POSITIONS_URL", d.vehicle_positions_url),
-            alerts_url=_str("GTFS_ALERTS_URL", d.alerts_url),
+            alerts_url=_str(
+                "GTFS_ALERTS_URL",
+                d.alerts_url if hsr else _sibling_feed(trip_updates, "ServiceAlerts"),
+            ),
             weather_url=_str("WEATHER_URL", d.weather_url),
             agency_name=_str("AGENCY_NAME"),
             agency_logo_url=_str("AGENCY_LOGO_URL"),

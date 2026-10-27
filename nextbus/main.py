@@ -373,6 +373,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         snapshot = poller.snapshot
         body = {
             "static": static.feed.meta.get("feed_version") if static.feed else None,
+            "service_dates": (
+                [str(static.feed.first_day), str(static.feed.last_day)] if static.feed else None
+            ),
             "realtime_fresh": poller.is_fresh(snapshot),
             "realtime_feed_time": snapshot.feed_time,
         }

@@ -73,7 +73,13 @@
     {% endfor %}
   </ol>
   {% else %}
+  {% if board.schedule_starts %}
+  <p class="empty">No times to show yet. The published schedule starts on {{ board.schedule_starts.strftime("%A, %B %-d") }}.</p>
+  {% elif board.schedule_ended %}
+  <p class="empty">No times to show. The published schedule ended on {{ board.schedule_ended.strftime("%A, %B %-d") }}.</p>
+  {% else %}
   <p class="empty">No departures {% if request.query_params.get("route") %}on the selected routes {% endif %}in the next {{ settings.horizon_minutes // 60 }} hours.</p>
+  {% endif %}
   {% endif %}
 
   <p class="board-foot">

@@ -59,6 +59,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             poll_seconds=settings.realtime_poll_seconds,
             idle_seconds=settings.realtime_idle_seconds,
             stale_seconds=settings.realtime_stale_seconds,
+            guessed=settings.guessed_feeds,
         )
         app.state.static = static
         app.state.poller = poller

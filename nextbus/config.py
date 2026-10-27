@@ -25,6 +25,9 @@ class Settings:
     vehicle_positions_url: str = f"{HSR_RT}/GTFS_VehiclePositions.pb"
     alerts_url: str = f"{HSR_RT}/GTFS_ServiceAlerts.pb"
 
+    # Open-Meteo forecast endpoint for the kiosk weather display. Empty disables it.
+    weather_url: str = "https://api.open-meteo.com/v1/forecast"
+
     agency_name: str = ""
     agency_logo_url: str = ""
     # Falls back to agency.txt when empty.
@@ -53,6 +56,7 @@ class Settings:
             ),
             vehicle_positions_url=_str("GTFS_VEHICLE_POSITIONS_URL", d.vehicle_positions_url),
             alerts_url=_str("GTFS_ALERTS_URL", d.alerts_url),
+            weather_url=_str("WEATHER_URL", d.weather_url),
             agency_name=_str("AGENCY_NAME"),
             agency_logo_url=_str("AGENCY_LOGO_URL"),
             timezone=_str("AGENCY_TIMEZONE"),

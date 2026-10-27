@@ -12,6 +12,7 @@ def client(gtfs_zip, tmp_path_factory):
         trip_updates_url="",
         vehicle_positions_url="",
         alerts_url="",
+        weather_url="",
         agency_name="TT",
         data_dir=tmp_path_factory.mktemp("data"),
     )
@@ -119,3 +120,18 @@ def test_service_worker_is_versioned(client):
 
 def test_manifest(client):
     assert client.get("/manifest.webmanifest").json()["name"] == "Next Bus · TT"
+
+
+def test_api_next_for_favourites(client):
+    body = client.get("/api/next", params={"stops": "S1,nope,S1,S2", "n": 2}).json()
+    assert set(body["stops"]) == {"S1", "S2"}
+    assert body["tz"] == "America/Toronto"
+    assert all(len(deps) <= 2 for deps in body["stops"].values())
+
+
+def test_weather_fragment_is_empty_when_disabled(client):
+    r = client.get("/stop/S1/weather")
+    assert r.status_code == 200
+    assert "weather" not in r.text
+    assert 'id="kiosk-weather"' in client.get("/stop/S1?kiosk=1").text
+    assert 'id="kiosk-weather"' not in client.get("/stop/S1").text

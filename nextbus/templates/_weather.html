@@ -1,0 +1,13 @@
+{% if weather %}
+<div class="weather" title="{{ weather.label }}{% if weather.wind_kmh %}, wind {{ weather.wind_kmh }} km/h{% endif %}">
+  <span class="weather-icon" aria-hidden="true">{{ weather.icon }}</span>
+  <span class="weather-temp">{{ weather.temperature }}°</span>
+  <span class="weather-detail">
+    <span>{{ weather.label }}{% if (weather.feels_like - weather.temperature) | abs >= 3 %} · feels {{ weather.feels_like }}°{% endif %}</span>
+    <span class="weather-range">
+      {% if weather.high is not none %}H {{ weather.high }}° L {{ weather.low }}°{% endif %}
+      {% if weather.precipitation_chance and weather.precipitation_chance >= 20 %} · {{ weather.precipitation_chance }}% precip{% endif %}
+    </span>
+  </span>
+</div>
+{% endif %}

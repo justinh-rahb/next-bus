@@ -52,7 +52,7 @@
     const sub = [stop.code ? `Stop ${stop.code}` : null, extra].filter(Boolean).join(" · ");
     return el(
       "li",
-      { role: "option", id: `opt-${stop.stop_id}` },
+      { role: "option", id: `opt-${stop.stop_id}`, "data-stop-id": stop.stop_id },
       el(
         "a",
         { href: `/stop/${encodeURIComponent(stop.stop_id)}` },
@@ -62,6 +62,9 @@
       ),
     );
   }
+
+  const relTime = (delta, clock) =>
+    delta < 60 ? "Now" : delta < 3600 ? `${Math.floor(delta / 60)} min` : clock;
 
   function fillList(list, stops, extra = () => null) {
     list.replaceChildren(...stops.map((s) => stopItem(s, extra(s))));
@@ -211,10 +214,73 @@
       section.hidden = stops.length === 0;
     };
     show($("#favourites-section"), $("#favourites"), favs);
+    if (favs.length) setupNextTimes($("#favourites"), favs);
     show($("#recents-section"), $("#recents"), recents);
     $("#clear-recents")?.addEventListener("click", () => {
       store.set(RECENTS, []);
       $("#recents-section").hidden = true;
+    });
+  }
+
+  // The next few departures under each favourite, refreshed while the page is open.
+  function setupNextTimes(list, stops) {
+    let offset = 0;
+    let fmt = null;
+
+    function tick() {
+      if (!fmt) return;
+      const now = (Date.now() + offset) / 1000;
+      for (const item of $$(".next-item", list)) {
+        const t = Number(item.dataset.time);
+        item.hidden = t - now < -30;
+        $(".next-time", item).textContent = relTime(t - now, fmt.format(new Date(t * 1000)));
+      }
+    }
+
+    async function load() {
+      if (document.hidden) return;
+      try {
+        const ids = stops.map((s) => s.stop_id).join(",");
+        const res = await fetch(`/api/next?stops=${encodeURIComponent(ids)}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        offset = data.now * 1000 - Date.now();
+        fmt = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZone: data.tz || undefined });
+        for (const li of $$("li[data-stop-id]", list)) {
+          const deps = data.stops[li.dataset.stopId];
+          let row = $(".next", li);
+          if (!row) {
+            row = el("span", { class: "next" });
+            $("a", li).append(row);
+          }
+          if (!deps) {
+            row.replaceChildren();
+            continue;
+          }
+          row.replaceChildren(
+            ...(deps.length
+              ? deps.map((d) =>
+                  el(
+                    "span",
+                    { class: d.live ? "next-item is-live" : "next-item", "data-time": d.time, title: d.headsign },
+                    routeChip({ label: d.badge, color: d.color, text_color: d.text_color }),
+                    el("span", { class: "next-time" }),
+                  ),
+                )
+              : [el("span", { class: "next-none" }, "No departures in the next few hours")]),
+          );
+        }
+        tick();
+      } catch {
+        // Keep showing the last times; the next refresh will try again.
+      }
+    }
+
+    load();
+    setInterval(load, 30000);
+    setInterval(tick, 10000);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) load();
     });
   }
 
@@ -340,6 +406,17 @@
       if (!document.hidden) refresh();
     });
     addEventListener("online", refresh);
+
+    // Weather changes slowly, and the server caches it, so refresh it every 10 minutes.
+    const weatherBox = $("#kiosk-weather");
+    if (weatherBox) {
+      setInterval(async () => {
+        try {
+          const res = await fetch(weatherBox.dataset.src, { cache: "no-store" });
+          if (res.ok) weatherBox.innerHTML = await res.text();
+        } catch {}
+      }, 10 * 60 * 1000);
+    }
 
     // Kiosks run for days; reload occasionally to pick up new deploys.
     if (document.body.classList.contains("kiosk")) {

@@ -23,6 +23,7 @@ from .arrivals import Board, Departure, build_board
 from .config import Settings
 from .gtfs_static import StaticFeed, StaticFeedManager, Stop
 from .realtime import RealtimePoller
+from .weather import WeatherService
 
 log = logging.getLogger("nextbus")
 
@@ -61,6 +62,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         app.state.static = static
         app.state.poller = poller
+        app.state.weather = WeatherService(client, settings.weather_url)
 
         async def refresh_static() -> None:
             try:
@@ -209,6 +211,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/stop/{stop_id}", response_class=HTMLResponse)
     async def stop_page(request: Request, stop_id: str):
         board = await board_for(request, stop_id)
+        kiosk = request.query_params.get("kiosk") in ("1", "true", "yes")
+        weather = (
+            await request.app.state.weather.current(board.stop.lat, board.stop.lon)
+            if kiosk
+            else None
+        )
         # Saved to favourites/recents in the browser, so the home page can list it offline.
         stop_data = {
             "stop_id": board.stop.stop_id,
@@ -219,7 +227,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 for r in board.routes
             ],
         }
-        return render(request, "stop.html", board=board, stop_data=stop_data)
+        return render(request, "stop.html", board=board, stop_data=stop_data, weather=weather)
+
+    @app.get("/stop/{stop_id}/weather", response_class=HTMLResponse)
+    async def stop_weather(request: Request, stop_id: str):
+        stop = feed_of(request).stop(stop_id)
+        if stop is None:
+            raise HTTPException(404, "Unknown stop")
+        weather = await request.app.state.weather.current(stop.lat, stop.lon)
+        response = render(request, "_weather.html", weather=weather)
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     @app.get("/stop/{stop_id}/board", response_class=HTMLResponse)
     async def stop_board(request: Request, stop_id: str):
@@ -276,6 +294,55 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "stops_away": d.stops_away,
             "vehicle": d.vehicle or None,
             "occupancy": d.occupancy,
+        }
+
+    @app.get("/api/next")
+    async def api_next(
+        request: Request,
+        stops: str = Query("", max_length=600),
+        n: int = Query(3, ge=1, le=5),
+    ):
+        """The next few departures for several stops at once, for the favourites list."""
+        feed = feed_of(request)
+        poller: RealtimePoller = request.app.state.poller
+        snapshot = await poller.get() if poller.enabled else poller.snapshot
+        now = int(time.time())
+        realtime = poller.is_fresh(snapshot, now)
+
+        def collect() -> dict[str, list[dict]]:
+            out: dict[str, list[dict]] = {}
+            for stop_id in list(dict.fromkeys(filter(None, stops.split(","))))[:20]:
+                stop = feed.stop(stop_id)
+                if stop is None:
+                    continue
+                board = build_board(
+                    feed,
+                    snapshot,
+                    stop,
+                    now,
+                    realtime=realtime,
+                    limit=n + 2,
+                    horizon_seconds=settings.horizon_minutes * 60,
+                )
+                out[stop.stop_id] = [
+                    {
+                        "badge": d.badge,
+                        "color": d.route.color,
+                        "text_color": d.route.text_color,
+                        "headsign": d.headsign,
+                        "time": d.time,
+                        "live": d.is_live,
+                    }
+                    for d in board.departures
+                    if not d.is_cancelled
+                ][:n]
+            return out
+
+        return {
+            "now": now,
+            "tz": feed.tz.key,
+            "realtime": realtime,
+            "stops": await asyncio.to_thread(collect),
         }
 
     @app.get("/api/stops/{stop_id}/departures")

@@ -8,7 +8,6 @@
       {% if weather.high is not none %}H {{ weather.high }}° L {{ weather.low }}°{% endif %}
       {% if weather.precipitation_chance and weather.precipitation_chance >= 20 %} · {{ weather.precipitation_chance }}% precip{% endif %}
     </span>
-    <span class="weather-credit">Weather: Open-Meteo</span>
   </span>
 </div>
 {% endif %}

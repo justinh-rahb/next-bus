@@ -1,11 +1,11 @@
-FROM python:3.13-slim AS build
+FROM python:3.15-slim AS build
 COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 
-FROM python:3.13-slim
+FROM python:3.15-slim
 # curl is what Coolify's (and most platforms') container health checks call.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

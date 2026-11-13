@@ -38,7 +38,7 @@
             {% if d.route.css_color %}style="--rc: {{ d.route.css_color }}; --rt: {{ d.route.css_text_color or '#fff' }}"{% endif %}
             title="{{ d.route.long_name }}">{{ d.badge }}</span>
       <div class="dep-info">
-        <div class="headsign">{{ d.headsign or d.route.long_name }}</div>
+        <div class="headsign">{% if kiosk %}{{ d.headsign or d.route.long_name }}{% else %}<a class="trip-link" href="/trip/{{ d.trip_id | urlencode }}" title="Follow this trip">{{ d.headsign or d.route.long_name }}</a>{% endif %}</div>
         <div class="dep-meta">
           {% if d.status == "cancelled" %}
             <span class="tag tag-bad">Cancelled</span>

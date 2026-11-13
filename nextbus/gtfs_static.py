@@ -295,6 +295,23 @@ class StaticFeed:
         )
         return [Stop(*row) for row in rows]
 
+    def trip(self, trip_id: str) -> tuple[str, str, str] | None:
+        """(route_id, service_id, headsign) for a trip."""
+        rows = self._query(
+            "SELECT route_id, service_id, headsign FROM trips WHERE trip_id = ?", (trip_id,)
+        )
+        return rows[0] if rows else None
+
+    def trip_stops(self, trip_id: str) -> list[tuple[int, int, Stop]]:
+        """Every stop of a trip in order, as (stop_sequence, departure seconds, stop)."""
+        rows = self._query(
+            "SELECT st.stop_sequence, st.departure, s.stop_id, s.stop_code, s.stop_name,"
+            " s.stop_desc, s.lat, s.lon FROM stop_times st JOIN stops s USING (stop_id)"
+            " WHERE st.trip_id = ? ORDER BY st.stop_sequence",
+            (trip_id,),
+        )
+        return [(seq, dep, Stop(*stop)) for seq, dep, *stop in rows]
+
     def routes_for_stop(self, stop_id: str) -> list[Route]:
         rows = self._query("SELECT route_id FROM stop_routes WHERE stop_id = ?", (stop_id,))
         routes = [self.routes[r[0]] for r in rows if r[0] in self.routes]

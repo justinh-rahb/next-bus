@@ -200,3 +200,28 @@ def test_board_explains_when_schedule_does_not_cover_today(feed):
     assert later.schedule_ended.isoformat() == "2026-12-31"
     earlier = board(feed, now=local_ts(2025, 12, 1, 8, 0))
     assert earlier.schedule_starts.isoformat() == "2026-01-01"
+
+
+def test_board_template_links_departures_to_their_trip(feed):
+    from jinja2 import Environment, FileSystemLoader
+
+    from nextbus.config import Settings
+
+    env = Environment(loader=FileSystemLoader("nextbus/templates"), autoescape=True)
+    template = env.get_template("_board.html")
+
+    class Request:
+        query_params: dict = {}
+
+    def render(kiosk):
+        return template.render(
+            board=board(feed),
+            kiosk=kiosk,
+            settings=Settings(),
+            request=Request(),
+            clock=str,
+            countdown=lambda t, n: "",
+        )
+
+    assert 'href="/trip/T1"' in render(kiosk=False)
+    assert "/trip/" not in render(kiosk=True)

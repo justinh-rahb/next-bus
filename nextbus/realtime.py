@@ -84,11 +84,21 @@ class TripPrediction:
 @dataclass(frozen=True, slots=True)
 class Vehicle:
     trip_id: str
+    # The fleet number riders can see on the bus, when the feed has one.
     label: str
     current_stop_sequence: int | None
     at_stop: bool
     occupancy: str | None
     timestamp: int
+    vehicle_id: str = ""
+    start_date: str = ""
+    lat: float | None = None
+    lon: float | None = None
+    bearing: float | None = None
+
+    def matches(self, number: str) -> bool:
+        number = number.strip().lstrip("#")
+        return bool(number) and number in (self.label, self.vehicle_id)
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,6 +145,12 @@ class Snapshot:
     # Feed header time of the trip updates feed, epoch seconds.
     feed_time: int | None = None
     fetched_at: float | None = None
+
+    def vehicle(self, number: str) -> Vehicle | None:
+        """The in-service vehicle with this fleet number (or feed ID), if any."""
+        found = [v for v in self.vehicles.values() if v.matches(number)]
+        # A bus finishing one trip can briefly appear on two; prefer the freshest report.
+        return max(found, key=lambda v: v.timestamp, default=None)
 
 
 def _text(translated: pb.TranslatedString) -> str:
@@ -207,6 +223,15 @@ def parse_vehicle_positions(data: bytes) -> dict[str, Vehicle]:
             at_stop=v.current_status == VP.STOPPED_AT,
             occupancy=occupancy,
             timestamp=v.timestamp,
+            vehicle_id=v.vehicle.id,
+            start_date=v.trip.start_date,
+            lat=v.position.latitude if v.HasField("position") else None,
+            lon=v.position.longitude if v.HasField("position") else None,
+            bearing=(
+                v.position.bearing
+                if v.HasField("position") and v.position.HasField("bearing")
+                else None
+            ),
         )
     return vehicles
 

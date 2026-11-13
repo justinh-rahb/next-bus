@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{% if view %}{{ view.badge }} {{ view.headsign }}{% else %}Bus {{ number }}{% endif %}{% endblock %}
+{% block body_class %}page-trip{% endblock %}
+
+{% block topbar_left %}
+<a class="back-link" href="/" aria-label="Home">
+  <svg aria-hidden="true"><use href="#i-back"/></svg>
+  <img class="brand-logo" src="{{ settings.agency_logo_url or '/static/icons/next-bus.svg' }}" alt="" width="36" height="36">
+</a>
+{% endblock %}
+
+{% block topbar_actions %}
+<span class="kiosk-clock" id="kiosk-clock" aria-hidden="true"></span>
+{% endblock %}
+
+{% block content %}
+<div id="trip" data-src="{{ board_url }}" data-tz="{{ tz }}" aria-live="polite">
+  {% include "_trip.html" %}
+</div>
+<p class="status-msg offline-msg" id="offline-msg" role="status" hidden>Can't reach the server. Retrying…</p>
+{% endblock %}

@@ -10,6 +10,11 @@
 {% endblock %}
 
 {% block topbar_actions %}
+{% if kiosk %}
+<div class="kiosk-weather" id="kiosk-weather" data-src="{{ weather_url }}">
+  {% include "_weather.html" %}
+</div>
+{% endif %}
 <span class="kiosk-clock" id="kiosk-clock" aria-hidden="true"></span>
 {% endblock %}
 

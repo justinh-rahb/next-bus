@@ -402,11 +402,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response.headers["Cache-Control"] = "no-store"
         return response
 
+    def is_kiosk(request: Request) -> bool:
+        return request.query_params.get("kiosk") in ("1", "true", "yes")
+
+    async def weather_for(request: Request, view: TripView | None):
+        if view is None:
+            return None
+        # A bus moves; share readings across ~10 km so a fleet of screens makes few requests.
+        lat, lon = view.position
+        return await request.app.state.weather.current(lat, lon, precision=1)
+
     @app.get("/trip/{trip_id}", response_class=HTMLResponse)
     async def trip_page(request: Request, trip_id: str):
         view = await trip_view(request, trip_id)
-        board_url = f"/trip/{quote(view.trip_id, safe='')}/board"
-        return render(request, "trip.html", view=view, board_url=board_url, number=None)
+        base = f"/trip/{quote(view.trip_id, safe='')}"
+        weather = await weather_for(request, view) if is_kiosk(request) else None
+        return render(
+            request,
+            "trip.html",
+            view=view,
+            number=None,
+            weather=weather,
+            board_url=f"{base}/board",
+            weather_url=f"{base}/weather",
+        )
+
+    @app.get("/trip/{trip_id}/weather", response_class=HTMLResponse)
+    async def trip_weather(request: Request, trip_id: str):
+        weather = await weather_for(request, await trip_view(request, trip_id))
+        return no_store(render(request, "_weather.html", weather=weather))
 
     @app.get("/trip/{trip_id}/board", response_class=HTMLResponse)
     async def trip_board(request: Request, trip_id: str):
@@ -430,8 +454,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # A bus between trips (or out of service) still gets a page that keeps refreshing,
         # so a screen mounted on the bus picks up the next trip by itself.
         view = await bus_view(request, number)
-        board_url = f"/bus/{quote(number, safe='')}/board"
-        return render(request, "trip.html", view=view, board_url=board_url, number=number)
+        base = f"/bus/{quote(number, safe='')}"
+        weather = await weather_for(request, view) if is_kiosk(request) else None
+        return render(
+            request,
+            "trip.html",
+            view=view,
+            number=number,
+            weather=weather,
+            board_url=f"{base}/board",
+            weather_url=f"{base}/weather",
+        )
+
+    @app.get("/bus/{number}/weather", response_class=HTMLResponse)
+    async def bus_weather(request: Request, number: str):
+        weather = await weather_for(request, await bus_view(request, number))
+        return no_store(render(request, "_weather.html", weather=weather))
 
     @app.get("/bus/{number}/board", response_class=HTMLResponse)
     async def bus_board(request: Request, number: str):

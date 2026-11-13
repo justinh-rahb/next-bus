@@ -128,3 +128,17 @@ def test_service_date_from_live_start_date(feed):
     assert view.stops[0].scheduled == at(8, 0)
     # The day before has the same trip; the start date picks this run.
     assert view.next_stop.predicted == at(8, 1)
+
+
+def test_trip_position_for_weather(feed):
+    moving = Snapshot(vehicles={"T1": bus(seq=2, lat=43.30, lon=-79.80)})
+    assert build_trip_view(feed, moving, "T1", at(8, 3), realtime=True).position == (43.30, -79.80)
+    # Without a vehicle position, use the next stop, or the last one once the trip is over.
+    assert build_trip_view(feed, Snapshot(), "T1", at(8, 3), realtime=False).position == (
+        43.2572,
+        -79.8688,
+    )
+    assert build_trip_view(feed, Snapshot(), "T1", at(9, 0), realtime=False).position == (
+        43.2550,
+        -79.8700,
+    )

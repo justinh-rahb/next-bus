@@ -96,10 +96,14 @@ class WeatherService:
     def enabled(self) -> bool:
         return bool(self.url)
 
-    async def current(self, lat: float | None, lon: float | None) -> Weather | None:
+    async def current(
+        self, lat: float | None, lon: float | None, *, precision: int = 2
+    ) -> Weather | None:
+        """Current conditions near a point. `precision` is decimal places of latitude and
+        longitude to share a reading across: 2 is about 1 km, 1 about 10 km."""
         if not self.enabled or lat is None or lon is None:
             return None
-        key = (round(lat, 2), round(lon, 2))
+        key = (round(lat, precision), round(lon, precision))
         cached = self._cache.get(key)
         if cached and time.monotonic() - cached[0] < self.ttl:
             return cached[1]

@@ -65,6 +65,14 @@ class TripView:
         return self.next_stop is None
 
     @property
+    def position(self) -> tuple[float | None, float | None]:
+        """Where the bus is: its reported position, else its next (or last) stop."""
+        if self.vehicle is not None and self.vehicle.lat is not None:
+            return self.vehicle.lat, self.vehicle.lon
+        stop = (self.next_stop or self.stops[-1]).stop
+        return stop.lat, stop.lon
+
+    @property
     def delay_minutes(self) -> int | None:
         nxt = self.next_stop
         if nxt is None or nxt.predicted is None:

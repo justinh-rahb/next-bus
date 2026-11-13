@@ -170,3 +170,12 @@ def test_api_trip_and_buses(client):
     assert client.get("/api/buses/2313").status_code == 404
     nearby = client.get("/api/buses/nearby", params={"lat": 43.25, "lon": -79.87}).json()
     assert nearby == {"realtime": False, "buses": []}
+
+
+def test_bus_and_trip_weather(client):
+    # Weather is off in tests, so the fragments are empty, but the kiosk screens ask for them.
+    for base in ("/trip/T1", "/bus/2313"):
+        assert "weather" not in client.get(f"{base}/weather").text
+        assert f'data-src="{base}/weather"' in client.get(f"{base}?kiosk=1").text
+        assert 'id="kiosk-weather"' not in client.get(base).text
+    assert client.get("/trip/nope/weather").status_code == 404

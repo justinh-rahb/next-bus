@@ -57,6 +57,13 @@ def test_service_caches_by_area_and_survives_errors():
             assert await service.current(43.2571, -79.8689) == first
             assert len(calls) == 2
             assert await service.current(None, None) is None
+            # A coarser grid shares one reading across a wider area (used for moving buses).
+            calls.clear()
+            service.ttl = 600
+            fail = False
+            await service.current(43.21, -79.81, precision=1)
+            await service.current(43.24, -79.84, precision=1)
+            assert len(calls) == 1
             assert await WeatherService(client, "").current(43.0, -79.0) is None
 
     asyncio.run(run())

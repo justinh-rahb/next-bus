@@ -407,17 +407,6 @@
     });
     addEventListener("online", refresh);
 
-    // Weather changes slowly, and the server caches it, so refresh it every 10 minutes.
-    const weatherBox = $("#kiosk-weather");
-    if (weatherBox) {
-      setInterval(async () => {
-        try {
-          const res = await fetch(weatherBox.dataset.src, { cache: "no-store" });
-          if (res.ok) weatherBox.innerHTML = await res.text();
-        } catch {}
-      }, 10 * 60 * 1000);
-    }
-
     // Kiosks run for days; reload occasionally to pick up new deploys.
     if (document.body.classList.contains("kiosk")) {
       setTimeout(() => location.reload(), 6 * 3600 * 1000);
@@ -542,6 +531,19 @@
     });
   }
 
+  // Kiosk weather (stop and bus screens). It changes slowly and the server caches it,
+  // so refresh every 10 minutes.
+  function setupKioskWeather() {
+    const box = $("#kiosk-weather");
+    if (!box) return;
+    setInterval(async () => {
+      try {
+        const res = await fetch(box.dataset.src, { cache: "no-store" });
+        if (res.ok) box.innerHTML = await res.text();
+      } catch {}
+    }, 10 * 60 * 1000);
+  }
+
   function setupServiceWorker() {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/service-worker.js").catch(() => {});
@@ -556,6 +558,7 @@
     setupStop();
     setupTrip();
     setupBusFinder();
+    setupKioskWeather();
     setupServiceWorker();
   });
 })();

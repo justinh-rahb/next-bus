@@ -225,3 +225,35 @@ def test_board_template_links_departures_to_their_trip(feed):
 
     assert 'href="/trip/T1"' in render(kiosk=False)
     assert "/trip/" not in render(kiosk=True)
+
+
+def test_alerts_show_an_expand_control(feed):
+    from jinja2 import Environment, FileSystemLoader
+
+    from nextbus.config import Settings
+
+    raw = pb.FeedMessage()
+    raw.header.gtfs_realtime_version = "2.0"
+    for i, entity in enumerate(({"stop_id": "S1"}, {"route_id": "R1"}, {"route_id": "R5"})):
+        a = raw.entity.add(id=str(i)).alert
+        a.header_text.translation.add(text=f"Alert {i}", language="en")
+        a.informed_entity.add(**entity)
+    snapshot = Snapshot(alerts=parse_alerts(raw.SerializeToString()))
+
+    class Request:
+        query_params: dict = {}
+
+    env = Environment(loader=FileSystemLoader("nextbus/templates"), autoescape=True)
+    html = env.get_template("_board.html").render(
+        board=board(feed, snapshot),
+        kiosk=False,
+        settings=Settings(),
+        request=Request(),
+        clock=str,
+        countdown=lambda t, n: "",
+    )
+    # One stop alert and one group of two route alerts, each with a Details/Hide toggle,
+    # and a chevron on each alert inside the group.
+    assert html.count('class="alert-toggle"') == 2
+    assert html.count('class="alert-chevron"') == 2
+    assert "2 service alerts on routes serving this stop" in html

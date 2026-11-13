@@ -9,7 +9,11 @@
   <details class="alert alert-stop" data-alert="{{ alert.alert_id }}">
     <summary>
       <svg aria-hidden="true"><use href="#i-alert"/></svg>
-      <span>{{ alert.header or alert.effect | capitalize or "Service alert" }}</span>
+      <span class="alert-title">{{ alert.header or alert.effect | capitalize or "Service alert" }}</span>
+      <span class="alert-toggle" aria-hidden="true">
+        <span class="when-closed">Details</span><span class="when-open">Hide</span>
+        <svg><use href="#i-chevron"/></svg>
+      </span>
     </summary>
     {{ alert_body(alert) }}
   </details>
@@ -18,11 +22,18 @@
   <details class="alert alert-route" data-alert="routes">
     <summary>
       <svg aria-hidden="true"><use href="#i-alert"/></svg>
-      <span>{{ wider | length }} service alert{{ "s" if wider | length > 1 }} on routes serving this stop</span>
+      <span class="alert-title">{{ wider | length }} service alert{{ "s" if wider | length > 1 }} on routes serving this stop</span>
+      <span class="alert-toggle" aria-hidden="true">
+        <span class="when-closed">Details</span><span class="when-open">Hide</span>
+        <svg><use href="#i-chevron"/></svg>
+      </span>
     </summary>
     {% for alert, scope in wider %}
     <details class="alert-item" data-alert="{{ alert.alert_id }}">
-      <summary>{{ alert.header or alert.effect | capitalize or "Service alert" }}</summary>
+      <summary>
+        <span class="alert-title">{{ alert.header or alert.effect | capitalize or "Service alert" }}</span>
+        <svg class="alert-chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
+      </summary>
       {{ alert_body(alert) }}
     </details>
     {% endfor %}

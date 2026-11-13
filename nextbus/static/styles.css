@@ -246,13 +246,36 @@ main { flex: 1; padding-bottom: 32px; }
   padding: 10px 14px;
   cursor: pointer; font-weight: 600; list-style: none;
 }
-.alert summary::-webkit-details-marker { display: none; }
-.alert summary svg { color: var(--late); }
+.alert summary::-webkit-details-marker, .alert summary::marker { display: none; content: ""; }
+.alert summary > svg:first-child { color: var(--late); }
+.alert summary:hover, .alert-item summary:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
+.alert summary { border-radius: var(--radius); }
+.alert[open] > summary { border-radius: var(--radius) var(--radius) 0 0; }
+.alert-title { flex: 1; min-width: 0; }
 .alert-route summary, .alert-agency summary { font-weight: 500; }
 .alert-body { white-space: pre-line; margin: 0; padding: 0 14px 12px 44px; font-size: 0.92rem; }
+
+/* Make it obvious an alert opens: a Details/Hide label and a chevron that flips. */
+.alert-toggle {
+  display: inline-flex; align-items: center; gap: 4px; flex: none;
+  padding: 3px 6px 3px 10px; border-radius: 999px;
+  border: 1px solid var(--alert-border);
+  font-size: 0.8rem; font-weight: 600; color: var(--text);
+}
+.alert-toggle svg, .alert-chevron { width: 1.1em; height: 1.1em; transition: transform 0.15s ease; }
+.alert[open] > summary .alert-toggle svg, .alert-item[open] > summary .alert-chevron { transform: rotate(180deg); }
+.alert .when-open, .alert[open] > summary .when-closed { display: none; }
+.alert[open] > summary .when-open { display: inline; }
+
 .alert-item { border-top: 1px solid var(--alert-border); }
-.alert-item summary { padding: 10px 14px 10px 44px; font-weight: 600; cursor: pointer; }
+.alert-item summary {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px 10px 44px; font-weight: 600; cursor: pointer; list-style: none;
+}
+.alert-item summary::-webkit-details-marker { display: none; }
+.alert-chevron { flex: none; color: var(--muted); }
 .alert-item .alert-body { padding-left: 44px; }
+@media (prefers-reduced-motion: reduce) { .alert-toggle svg, .alert-chevron { transition: none; } }
 
 .departures { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 

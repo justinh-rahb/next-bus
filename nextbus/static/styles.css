@@ -303,6 +303,51 @@ main { flex: 1; padding-bottom: 32px; }
 
 .kiosk-clock, .kiosk-weather { display: none; }
 
+/* On the bus: trip and bus pages */
+
+.hero .pill-btn + .pill-btn { margin-left: 6px; }
+.hint { color: var(--muted); font-size: 0.85rem; margin: 8px 2px 0; }
+.trip-link { color: inherit; text-decoration: none; }
+.trip-link:hover { text-decoration: underline; }
+
+.trip-head { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+.trip-title { min-width: 0; }
+.trip-head h1 { margin: 0; font-size: clamp(1.25rem, 4.6vw, 1.7rem); line-height: 1.2; overflow-wrap: break-word; }
+
+.next-stop {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.next-stop.is-at { border-color: var(--live); }
+.next-label { margin: 0; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 650; }
+.next-stop.is-at .next-label { color: var(--live); }
+.next-name { margin: 4px 0 6px; font-size: clamp(1.5rem, 6vw, 2.2rem); line-height: 1.15; letter-spacing: -0.01em; overflow-wrap: break-word; }
+.next-when { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; color: var(--muted); }
+.next-when [data-countdown] { font-size: 1.5rem; font-weight: 750; color: var(--live); }
+
+.trip-section { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 20px 0 6px; }
+.trip-stops { list-style: none; margin: 0 0 0 8px; padding: 0; border-left: 3px solid var(--border); }
+.trip-stop { position: relative; display: flex; justify-content: space-between; gap: 12px; padding: 9px 4px 9px 18px; }
+.trip-stop::before {
+  content: ""; position: absolute; left: -8px; top: 50%;
+  width: 11px; height: 11px; margin-top: -5.5px; border-radius: 50%;
+  background: var(--bg); border: 3px solid var(--muted);
+}
+.trip-stop-name { min-width: 0; overflow-wrap: break-word; }
+.trip-stop-name a { color: inherit; text-decoration: none; }
+.trip-stop-name a:hover { text-decoration: underline; }
+.trip-stop-time { white-space: nowrap; color: var(--muted); font-weight: 600; }
+.trip-stop-time.is-live { color: var(--live); }
+.trip-stop.is-skipped .trip-stop-name { text-decoration: line-through; }
+.trip-stop.is-passed { color: var(--muted); }
+.trip-stop.is-passed::before { border-color: var(--border); }
+.passed-stops { margin-top: 14px; }
+.passed-stops summary { cursor: pointer; color: var(--muted); padding: 6px 0; }
+
 @keyframes pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
 
@@ -331,3 +376,9 @@ main { flex: 1; padding-bottom: 32px; }
 .kiosk .countdown { font-size: 2em; }
 .kiosk .dep-meta, .kiosk .clock { font-size: 0.95em; }
 .kiosk .route-filter { display: none; }
+/* On-bus screen: the next stop is the point; show only a few stops after it. */
+.kiosk .next-name { font-size: 3em; }
+.kiosk .next-when [data-countdown] { font-size: 2em; }
+.kiosk .trip-stops li:nth-child(n + 6) { display: none; }
+.kiosk .trip-stop { font-size: 1.25em; }
+.kiosk .next-label, .kiosk .trip-section { font-size: 0.9em; }

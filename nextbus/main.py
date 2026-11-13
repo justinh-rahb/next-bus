@@ -22,7 +22,8 @@ from fastapi.templating import Jinja2Templates
 from .arrivals import Board, Departure, build_board
 from .config import Settings
 from .gtfs_static import StaticFeed, StaticFeedManager, Stop
-from .realtime import RealtimePoller
+from .onboard import TripView, build_trip_view, nearby_buses
+from .realtime import RealtimePoller, Snapshot
 from .weather import WeatherService
 
 log = logging.getLogger("nextbus")
@@ -128,6 +129,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "kiosk": request.query_params.get("kiosk") in ("1", "true", "yes"),
                 "clock": (lambda ts: clock(ts, feed)) if feed else str,
                 "countdown": countdown,
+                "now_ts": int(time.time()),
                 "tz": feed.tz.key if feed else "",
                 **context,
             },
@@ -366,6 +368,158 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 for a, scope in board.alerts
             ],
         }
+
+    # On the bus: a trip's next stop and upcoming stops, found by trip or by fleet number.
+
+    async def live(request: Request) -> tuple[Snapshot, bool, int]:
+        poller: RealtimePoller = request.app.state.poller
+        snapshot = await poller.get() if poller.enabled else poller.snapshot
+        now = int(time.time())
+        return snapshot, poller.is_fresh(snapshot, now), now
+
+    async def trip_view(request: Request, trip_id: str) -> TripView:
+        feed = feed_of(request)
+        snapshot, realtime, now = await live(request)
+        view = await asyncio.to_thread(
+            build_trip_view, feed, snapshot, trip_id, now, realtime=realtime
+        )
+        if view is None:
+            raise HTTPException(404, "Unknown trip")
+        return view
+
+    async def bus_view(request: Request, number: str) -> TripView | None:
+        """The trip a bus is running now, or None if it isn't reporting one."""
+        feed = feed_of(request)
+        snapshot, realtime, now = await live(request)
+        vehicle = snapshot.vehicle(number) if realtime else None
+        if vehicle is None:
+            return None
+        return await asyncio.to_thread(
+            build_trip_view, feed, snapshot, vehicle.trip_id, now, realtime=True, vehicle=vehicle
+        )
+
+    def no_store(response: Response) -> Response:
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+    @app.get("/trip/{trip_id}", response_class=HTMLResponse)
+    async def trip_page(request: Request, trip_id: str):
+        view = await trip_view(request, trip_id)
+        board_url = f"/trip/{quote(view.trip_id, safe='')}/board"
+        return render(request, "trip.html", view=view, board_url=board_url, number=None)
+
+    @app.get("/trip/{trip_id}/board", response_class=HTMLResponse)
+    async def trip_board(request: Request, trip_id: str):
+        view = await trip_view(request, trip_id)
+        return no_store(render(request, "_trip.html", view=view, number=None))
+
+    @app.get("/bus", response_class=HTMLResponse)
+    async def bus_finder(request: Request, n: str = Query("", max_length=20)):
+        if n.strip():
+            snapshot, realtime, _ = await live(request)
+            vehicle = snapshot.vehicle(n) if realtime else None
+            if vehicle is not None:
+                # Built from the feed's own fleet number, not the typed text.
+                number = vehicle.label or vehicle.vehicle_id
+                return RedirectResponse(f"/bus/{quote(number, safe='')}", status_code=302)
+            return render(request, "bus_finder.html", 404, not_found=n.strip())
+        return render(request, "bus_finder.html", not_found=None)
+
+    @app.get("/bus/{number}", response_class=HTMLResponse)
+    async def bus_page(request: Request, number: str):
+        # A bus between trips (or out of service) still gets a page that keeps refreshing,
+        # so a screen mounted on the bus picks up the next trip by itself.
+        view = await bus_view(request, number)
+        board_url = f"/bus/{quote(number, safe='')}/board"
+        return render(request, "trip.html", view=view, board_url=board_url, number=number)
+
+    @app.get("/bus/{number}/board", response_class=HTMLResponse)
+    async def bus_board(request: Request, number: str):
+        view = await bus_view(request, number)
+        return no_store(render(request, "_trip.html", view=view, number=number))
+
+    def iso(ts: int | None, feed: StaticFeed) -> str | None:
+        return datetime.fromtimestamp(ts, feed.tz).isoformat() if ts is not None else None
+
+    def trip_json(view: TripView, feed: StaticFeed) -> dict:
+        vehicle = view.vehicle
+        return {
+            "trip_id": view.trip_id,
+            "route": {
+                "id": view.route.route_id,
+                "badge": view.badge,
+                "label": view.route.label,
+                "color": view.route.color,
+                "text_color": view.route.text_color,
+            },
+            "headsign": view.headsign,
+            "realtime": view.realtime,
+            "cancelled": view.cancelled,
+            "finished": view.finished,
+            "delay_minutes": view.delay_minutes,
+            "vehicle": (
+                {
+                    "number": vehicle.label or vehicle.vehicle_id,
+                    "lat": vehicle.lat,
+                    "lon": vehicle.lon,
+                    "bearing": vehicle.bearing,
+                    "updated": iso(vehicle.timestamp or None, feed),
+                }
+                if vehicle
+                else None
+            ),
+            "stops": [
+                {
+                    "stop_id": s.stop.stop_id,
+                    "code": s.stop.code,
+                    "name": s.stop.name,
+                    "sequence": s.sequence,
+                    "state": s.state,
+                    "skipped": s.skipped,
+                    "scheduled": iso(s.scheduled, feed),
+                    "predicted": iso(s.predicted, feed),
+                }
+                for s in view.stops
+            ],
+        }
+
+    @app.get("/api/trips/{trip_id}")
+    async def api_trip(request: Request, trip_id: str):
+        return trip_json(await trip_view(request, trip_id), feed_of(request))
+
+    @app.get("/api/buses/nearby")
+    async def api_buses_nearby(
+        request: Request,
+        lat: float = Query(ge=-90, le=90),
+        lon: float = Query(ge=-180, le=180),
+    ):
+        feed = feed_of(request)
+        snapshot, realtime, now = await live(request)
+        if not realtime:
+            return {"realtime": False, "buses": []}
+        found = await asyncio.to_thread(nearby_buses, feed, snapshot, lat, lon, now)
+        return {
+            "realtime": True,
+            "buses": [
+                {
+                    "number": b.vehicle.label or b.vehicle.vehicle_id,
+                    "distance_m": round(b.distance_m),
+                    "badge": b.view.badge,
+                    "color": b.view.route.color,
+                    "text_color": b.view.route.text_color,
+                    "headsign": b.view.headsign,
+                    "next_stop": b.view.next_stop.stop.name if b.view.next_stop else None,
+                }
+                for b in found
+            ],
+        }
+
+    @app.get("/api/buses/{number}")
+    async def api_bus(request: Request, number: str):
+        view = await bus_view(request, number)
+        if view is None:
+            raise HTTPException(404, "That bus isn't running a trip right now")
+        return trip_json(view, feed_of(request))
 
     @app.api_route("/healthz", methods=["GET", "HEAD"])
     async def healthz(request: Request):

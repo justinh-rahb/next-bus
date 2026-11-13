@@ -424,6 +424,124 @@
     }
   }
 
+  /* On the bus */
+
+  // Trip and bus pages: refresh the stop list and tick its countdowns.
+  function setupTrip() {
+    const box = $("#trip");
+    if (!box) return;
+    const offline = $("#offline-msg");
+    const kioskClock = $("#kiosk-clock");
+    const clockFmt = new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: box.dataset.tz || undefined,
+    });
+    let offset = 0;
+    const sync = () => {
+      const serverNow = Number($(".trip-board", box)?.dataset.now);
+      if (serverNow) offset = serverNow * 1000 - Date.now();
+    };
+
+    function tick() {
+      const now = (Date.now() + offset) / 1000;
+      for (const item of $$("[data-time]", box)) {
+        const cd = $("[data-countdown]", item);
+        if (cd) cd.textContent = relTime(Number(item.dataset.time) - now, item.dataset.clock);
+      }
+      if (kioskClock) kioskClock.textContent = clockFmt.format(new Date(Date.now() + offset));
+    }
+
+    let pending = null;
+    async function refresh() {
+      if (document.hidden) return;
+      pending?.abort();
+      const controller = (pending = new AbortController());
+      try {
+        const res = await fetch(box.dataset.src, { cache: "no-store", signal: controller.signal });
+        if (!res.ok) throw new Error(res.statusText);
+        const html = await res.text();
+        const wasOpen = $("details.passed-stops", box)?.open;
+        box.innerHTML = html;
+        if (wasOpen) $("details.passed-stops", box)?.setAttribute("open", "");
+        offline.hidden = true;
+        sync();
+        tick();
+      } catch (err) {
+        if (err.name !== "AbortError") offline.hidden = false;
+      }
+    }
+
+    sync();
+    tick();
+    setInterval(tick, 1000);
+    // Buses move fast; refresh more often than a stop board.
+    setInterval(refresh, 15000);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refresh();
+    });
+    addEventListener("online", refresh);
+    if (document.body.classList.contains("kiosk")) {
+      setTimeout(() => location.reload(), 6 * 3600 * 1000);
+    }
+  }
+
+  function setupBusFinder() {
+    const btn = $("#nearby-bus-btn");
+    const list = $("#nearby-buses");
+    const status = $("#nearby-bus-status");
+    if (!btn) return;
+    if (!("geolocation" in navigator)) {
+      btn.hidden = true;
+      return;
+    }
+    const say = (msg) => {
+      status.textContent = msg;
+      status.hidden = !msg;
+    };
+    const busItem = (b) =>
+      el(
+        "li",
+        {},
+        el(
+          "a",
+          { href: `/bus/${encodeURIComponent(b.number)}` },
+          el("span", { class: "name" }, b.headsign),
+          el(
+            "span",
+            { class: "sub" },
+            [`Bus ${b.number}`, `${Math.round(b.distance_m / 10) * 10} m away`, b.next_stop && `Next: ${b.next_stop}`]
+              .filter(Boolean)
+              .join(" · "),
+          ),
+          el("span", { class: "mini-routes" }, routeChip({ label: b.badge, color: b.color, text_color: b.text_color })),
+        ),
+      );
+    btn.addEventListener("click", () => {
+      say("Finding your location…");
+      navigator.geolocation.getCurrentPosition(
+        async ({ coords }) => {
+          try {
+            const res = await fetch(`/api/buses/nearby?lat=${coords.latitude}&lon=${coords.longitude}`);
+            if (!res.ok) throw new Error(res.statusText);
+            const data = await res.json();
+            if (!data.realtime) say("Live bus locations aren't available right now. Enter the bus number instead.");
+            else if (!data.buses.length) say("No buses are reporting nearby. Enter the bus number instead.");
+            else say("");
+            list.replaceChildren(...data.buses.map(busItem));
+            list.hidden = data.buses.length === 0;
+          } catch {
+            say("Couldn't load nearby buses. Try again.");
+          }
+        },
+        (err) => {
+          say(err.code === err.PERMISSION_DENIED ? "Location permission was denied." : "Couldn't get your location.");
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+      );
+    });
+  }
+
   function setupServiceWorker() {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/service-worker.js").catch(() => {});
@@ -436,6 +554,8 @@
     setupNearby();
     setupSaved();
     setupStop();
+    setupTrip();
+    setupBusFinder();
     setupServiceWorker();
   });
 })();

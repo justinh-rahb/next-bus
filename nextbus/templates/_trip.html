@@ -1,0 +1,90 @@
+{% macro when(t, now) -%}
+  {%- set cd = countdown(t, now) -%}
+  <span data-countdown>{{ cd or clock(t) }}</span>
+{%- endmacro %}
+<div class="trip-board" data-now="{{ view.now if view else now_ts }}">
+{% if view is none %}
+  <div class="trip-head"><h1>Bus {{ number }}</h1></div>
+  <p class="empty">Bus {{ number }} isn't running a trip right now. This page updates by itself when it starts its next one.</p>
+{% else %}
+  {% set nxt = view.next_stop %}
+  {% set bus_number = view.vehicle.label or view.vehicle.vehicle_id if view.vehicle else "" %}
+  <div class="trip-head">
+    <span class="route-badge"
+          {% if view.route.css_color %}style="--rc: {{ view.route.css_color }}; --rt: {{ view.route.css_text_color or '#fff' }}"{% endif %}
+          title="{{ view.route.long_name }}">{{ view.badge }}</span>
+    <div class="trip-title">
+      <h1>{{ view.headsign or view.route.long_name }}</h1>
+      <p class="stop-sub">
+        {% if bus_number %}Bus {{ bus_number }}{% endif %}
+        {% if bus_number and view.route.long_name %}<span class="dot">·</span>{% endif %}
+        {{ view.route.long_name | title }}
+      </p>
+    </div>
+  </div>
+
+  {% if view.cancelled %}
+  <p class="empty tag-bad">This trip has been cancelled.</p>
+  {% elif view.finished %}
+  <p class="empty">This trip has reached the end of its route.{% if number %} The page switches to bus {{ number }}'s next trip when it starts.{% endif %}</p>
+  {% else %}
+  <section class="next-stop{% if nxt.state == 'at' %} is-at{% endif %}">
+    <p class="next-label">{{ "Now at" if nxt.state == "at" else "Next stop" }}</p>
+    <h2 class="next-name">{{ nxt.stop.name }}</h2>
+    {% if nxt.state != "at" %}
+    <p class="next-when" data-time="{{ nxt.time }}" data-clock="{{ clock(nxt.time) }}">
+      {{ when(nxt.time, view.now) }}
+      <span class="clock">{{ clock(nxt.time) }}</span>
+      {% set late = view.delay_minutes or 0 %}
+      {% if nxt.predicted is not none %}
+        {% if late >= 2 %}<span class="late">{{ late }} min late</span>
+        {% elif late <= -2 %}<span class="early">{{ -late }} min early</span>
+        {% else %}<span>On time</span>{% endif %}
+      {% else %}
+        <span class="sched">Scheduled</span>
+      {% endif %}
+    </p>
+    {% endif %}
+  </section>
+
+  {% set later = view.upcoming[1:] %}
+  {% if later %}
+  <h2 class="trip-section">Then</h2>
+  <ol class="trip-stops">
+    {% for s in later %}
+    <li class="trip-stop{% if s.skipped %} is-skipped{% endif %}" data-time="{{ s.time }}" data-clock="{{ clock(s.time) }}">
+      <span class="trip-stop-name">
+        {% if kiosk %}{{ s.stop.name }}{% else %}<a href="/stop/{{ s.stop.stop_id | urlencode }}">{{ s.stop.name }}</a>{% endif %}
+        {% if s.skipped %}<span class="tag tag-bad">Not stopping</span>{% endif %}
+      </span>
+      <span class="trip-stop-time{% if s.predicted is not none %} is-live{% endif %}">{{ when(s.time, view.now) }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+
+  {% if view.passed and not kiosk %}
+  <details class="passed-stops">
+    <summary>{{ view.passed | length }} earlier stop{{ "s" if view.passed | length != 1 }}</summary>
+    <ol class="trip-stops">
+      {% for s in view.passed %}
+      <li class="trip-stop is-passed"><span class="trip-stop-name">{{ s.stop.name }}</span><span class="trip-stop-time">{{ clock(s.time) }}</span></li>
+      {% endfor %}
+    </ol>
+  </details>
+  {% endif %}
+  {% endif %}
+
+  <p class="board-foot">
+    {% if view.realtime and (view.vehicle or nxt and nxt.predicted is not none) %}
+      <span class="live"><span class="pulse" aria-hidden="true"></span>Live</span>
+      {% if view.vehicle and view.vehicle.timestamp %}<span class="dot">·</span> Bus position from {{ clock(view.vehicle.timestamp) }}{% endif %}
+    {% elif view.realtime %}
+      <span>No live data for this trip yet. Showing scheduled times.</span>
+    {% else %}
+      <span class="warn">Live tracking unavailable. Showing scheduled times.</span>
+    {% endif %}
+    <span class="dot">·</span> Updated {{ clock(view.now) }}
+  </p>
+{% endif %}
+</div>

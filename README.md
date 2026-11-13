@@ -11,6 +11,8 @@ Live bus departures for any stop, built on an agency's open GTFS and GTFS-Realti
 - **Service alerts** for the stop and the routes that serve it.
 - **Route filter**: tap route chips to show only the buses you care about. The filter is kept in the URL, so it can be bookmarked.
 - **Kiosk mode** (`?kiosk=1`) is a large, auto-refreshing board for wall-mounted screens, with a clock and the current weather at the stop.
+- **On the bus**: find the bus you're on from your location or the fleet number posted inside, then see the next stop, live arrival times for the rest of the trip, and stops already passed. Tap any departure on a stop board to follow that trip.
+- **On-bus screens**: `/bus/<fleet number>?kiosk=1` is a large next-stop display that follows the bus from one trip to the next.
 - **Installable** as a home-screen app, with light and dark themes. It works without any CDN.
 
 ## URLs
@@ -19,11 +21,16 @@ Live bus departures for any stop, built on an agency's open GTFS and GTFS-Realti
 | --- | --- |
 | `/` | Search, nearby stops, favourites |
 | `/stop/<stop_id>` | Departure board. Add `?route=<route_id>,…`, `?kiosk=1` or `?theme=dark` |
+| `/bus` | Which bus am I on? Nearby buses, or enter the fleet number |
+| `/bus/<fleet number>` | Next stop and upcoming stops for whatever trip that bus is running. Add `?kiosk=1` for an on-bus screen |
+| `/trip/<trip_id>` | Next stop and upcoming stops for one trip |
 | `/c/<stop_code>` | Redirects to a stop by the number printed on its sign, handy for QR codes |
 | `/?stop_id=<stop_id>` | Old-style link, redirects to `/stop/<stop_id>` |
 | `/api/search?q=` | Stop search (JSON) |
 | `/api/nearby?lat=&lon=` | Stops within 800 m (JSON) |
 | `/api/stops/<stop_id>/departures` | Departures, alerts and realtime status (JSON) |
+| `/api/trips/<trip_id>`, `/api/buses/<fleet number>` | A trip's stops with state (passed, next, upcoming) and times (JSON) |
+| `/api/buses/nearby?lat=&lon=` | In-service buses within 500 m (JSON) |
 | `/api/next?stops=<id>,<id>` | Next few departures for up to 20 stops (JSON) |
 | `/api/docs` | Interactive API docs |
 | `/healthz` | 200 once the schedule is loaded |

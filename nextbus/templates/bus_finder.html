@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Which bus are you on?{% endblock %}
+{% block body_class %}page-bus-finder{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Which bus are you on?</h1>
+  {% if not_found %}
+  <p class="status-msg warn" role="alert">No bus numbered {{ not_found }} is running a trip right now. Check the number and try again.</p>
+  {% endif %}
+  <form class="search" action="/bus" method="get" autocomplete="off">
+    <label class="visually-hidden" for="bus-number">Bus number</label>
+    <svg class="search-icon" aria-hidden="true"><use href="#i-bus"/></svg>
+    <input id="bus-number" name="n" type="text" inputmode="numeric" enterkeyhint="go"
+           placeholder="Bus number, e.g. 2313" value="{{ not_found or '' }}" maxlength="20" required>
+  </form>
+  <p class="hint">The number is on the front, side and back of the bus, and usually above the driver.</p>
+  <button type="button" class="pill-btn" id="nearby-bus-btn">
+    <svg aria-hidden="true"><use href="#i-locate"/></svg> Buses near me
+  </button>
+  <p class="status-msg" id="nearby-bus-status" role="status" hidden></p>
+  <ul id="nearby-buses" class="stop-list" hidden></ul>
+</section>
+{% endblock %}

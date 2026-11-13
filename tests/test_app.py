@@ -135,3 +135,38 @@ def test_weather_fragment_is_empty_when_disabled(client):
     assert "weather" not in r.text
     assert 'id="kiosk-weather"' in client.get("/stop/S1?kiosk=1").text
     assert 'id="kiosk-weather"' not in client.get("/stop/S1").text
+
+
+def test_trip_page(client):
+    r = client.get("/trip/T1")
+    assert r.status_code == 200
+    assert "WEST LOOP" in r.text
+    assert 'data-src="/trip/T1/board"' in r.text
+    assert client.get("/trip/nope").status_code == 404
+    board = client.get("/trip/T1/board")
+    assert board.text.lstrip().startswith('<div class="trip-board"')
+    assert board.headers["cache-control"] == "no-store"
+
+
+def test_bus_page_waits_for_a_bus_that_is_not_running(client):
+    # Realtime is off in tests, so no bus is ever found, but a mounted screen keeps polling.
+    r = client.get("/bus/2313")
+    assert r.status_code == 200
+    assert "isn't running a trip right now" in r.text
+    assert 'data-src="/bus/2313/board"' in r.text
+
+
+def test_bus_finder(client):
+    assert "Which bus are you on?" in client.get("/bus").text
+    r = client.get("/bus", params={"n": "2313"})
+    assert r.status_code == 404
+    assert "No bus numbered 2313" in r.text
+
+
+def test_api_trip_and_buses(client):
+    body = client.get("/api/trips/T1").json()
+    assert body["route"]["badge"] == "1A"
+    assert [s["stop_id"] for s in body["stops"]] == ["S1", "S2", "S3"]
+    assert client.get("/api/buses/2313").status_code == 404
+    nearby = client.get("/api/buses/nearby", params={"lat": 43.25, "lon": -79.87}).json()
+    assert nearby == {"realtime": False, "buses": []}

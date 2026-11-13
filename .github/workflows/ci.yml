@@ -24,3 +24,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: docker build -t next-bus .
+      # Start the image against the test schedule, so a base image or dependency bump that
+      # builds but doesn't run is caught before Dependabot auto-merges it.
+      - name: Smoke test the image
+        run: |
+          (cd tests/fixtures/gtfs && zip -q /tmp/feed.zip *.txt)
+          docker run -d --name smoke -p 8000:8000 -v /tmp/feed.zip:/feed.zip:ro \
+            -e GTFS_STATIC_URL=/feed.zip -e GTFS_TRIP_UPDATES_URL= -e WEATHER_URL= next-bus
+          for i in $(seq 1 30); do
+            if curl -fsS localhost:8000/healthz && curl -fsS -o /dev/null localhost:8000/stop/S1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs smoke
+          exit 1
